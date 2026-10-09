@@ -1,0 +1,27 @@
+@model List<Client>
+@{ ViewData["Title"] = "مشتریان ما"; }
+<div class="a-card">
+    <div class="a-card-head"><h5><i class="bi bi-buildings ic text-primary"></i>مشتریان ما (اسلایدر صفحه اصلی)</h5><a class="btn btn-a btn-sm" asp-action="Edit"><i class="bi bi-plus-lg ic"></i>افزودن مشتری</a></div>
+    <div class="a-card-body">
+        <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-xl-5">
+            @foreach (var c in Model)
+            {
+                <div class="col">
+                    <div class="a-img-tile h-100 d-flex flex-column">
+                        <img src="@(c.LogoPath ?? "/img/placeholder.svg")" alt="" style="aspect-ratio:16/9" />
+                        <div class="p-2 text-center flex-grow-1">
+                            <div class="fw-bold small">@c.NameFa</div>
+                            <div class="small text-muted ltr text-center">@c.NameEn</div>
+                            @if (!c.IsActive) { <span class="pill pill-gray mt-1">غیرفعال</span> }
+                        </div>
+                        <div class="d-flex gap-1 p-2 pt-0 justify-content-center">
+                            <a class="btn btn-soft-primary btn-sm" asp-action="Edit" asp-route-id="@c.Id"><i class="bi bi-pencil"></i></a>
+                            <form method="post" asp-action="Delete" asp-route-id="@c.Id" data-confirm="«@c.NameFa» حذف شود؟"><button class="btn btn-soft-danger btn-sm"><i class="bi bi-trash3"></i></button></form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        @if (Model.Count == 0) { <div class="a-empty"><i class="bi bi-buildings"></i>هنوز مشتری‌ای ثبت نشده است.</div> }
+    </div>
+</div>

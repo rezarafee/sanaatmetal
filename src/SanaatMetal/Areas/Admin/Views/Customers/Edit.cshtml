@@ -1,0 +1,47 @@
+@model Customer
+@{
+    ViewData["Title"] = Model.Id == 0 ? "خریدار جدید" : "خریدار: " + (Model.FullName ?? Model.Mobile);
+    var orders = ViewBag.Orders as List<Order> ?? new();
+    var invoices = ViewBag.Invoices as List<Invoice> ?? new();
+}
+<div class="row g-4">
+    <div class="col-xl-6">
+        <form method="post" asp-route-id="@(Model.Id == 0 ? null : Model.Id)" class="a-card a-card-body">
+            <div asp-validation-summary="All" class="text-danger small"></div>
+            <div class="row g-3">
+                <div class="col-md-6"><label class="form-label">موبایل *</label><input class="form-control ltr" asp-for="Mobile" required /></div>
+                <div class="col-md-6"><label class="form-label">نام و نام خانوادگی</label><input class="form-control" asp-for="FullName" /></div>
+                <div class="col-md-6"><label class="form-label">شرکت</label><input class="form-control" asp-for="CompanyName" /></div>
+                <div class="col-md-6"><label class="form-label">ایمیل</label><input class="form-control ltr" asp-for="Email" /></div>
+                <div class="col-md-6"><label class="form-label">کد اقتصادی</label><input class="form-control ltr" asp-for="EconomicCode" /></div>
+                <div class="col-md-6"><label class="form-label">شناسه / کد ملی</label><input class="form-control ltr" asp-for="NationalId" /></div>
+                <div class="col-md-4"><label class="form-label">شهر</label><input class="form-control" asp-for="City" /></div>
+                <div class="col-md-8"><label class="form-label">نشانی</label><input class="form-control" asp-for="Address" /></div>
+                <div class="col-12"><label class="form-label">یادداشت</label><textarea class="form-control" asp-for="Note" rows="2"></textarea></div>
+            </div>
+            <button class="btn btn-a mt-3"><i class="bi bi-check2 ic"></i>ذخیره</button>
+        </form>
+    </div>
+    @if (Model.Id != 0)
+    {
+        <div class="col-xl-6">
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5>سفارش‌های سایت</h5></div>
+                <div class="list-group list-group-flush">
+                    @foreach (var o in orders) { <a class="list-group-item list-group-item-action bg-transparent d-flex justify-content-between" asp-controller="Orders" asp-action="Details" asp-route-id="@o.Id"><span class="ltr">@o.Number</span><span>@D(o.CreatedAt)</span><partial name="_OrderStatus" model="o.Status" /></a> }
+                </div>
+                @if (orders.Count == 0) { <div class="a-empty py-3">سفارشی ندارد</div> }
+            </div>
+            @if (Can(Permissions.InvoicesView))
+            {
+                <div class="a-card">
+                    <div class="a-card-head"><h5>فاکتورها</h5></div>
+                    <div class="list-group list-group-flush">
+                        @foreach (var i in invoices) { <a class="list-group-item list-group-item-action bg-transparent d-flex justify-content-between" asp-controller="Invoices" asp-action="Details" asp-route-id="@i.Id"><span class="ltr">@i.Number</span><span>@D(i.IssueDate)</span><b class="num">@N(i.GrandTotal)</b></a> }
+                    </div>
+                    @if (invoices.Count == 0) { <div class="a-empty py-3">فاکتوری ندارد</div> }
+                </div>
+            }
+        </div>
+    }
+</div>

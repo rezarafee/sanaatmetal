@@ -1,0 +1,118 @@
+@model SanaatMetal.Areas.Admin.Controllers.InvoiceInput
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "فاکتور جدید" : "ویرایش فاکتور " + Fmt.FaDigits(Model.Number);
+    var canPrice = Can(Permissions.PricingManage) || Can(Permissions.InvoicesEdit);
+}
+<form method="post" asp-action="Save" id="invoiceForm" data-can-price="@(canPrice ? "1" : "0")">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="OrderId" />
+    <div asp-validation-summary="All" class="alert alert-danger" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+    <div class="row g-4">
+        <div class="col-xl-9">
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-person-vcard ic text-primary"></i>مشخصات خریدار</h5>
+                    @if (Model.OrderId.HasValue) { <span class="pill pill-orange">از سفارش سایت</span> }
+                </div>
+                <div class="a-card-body row g-3">
+                    <div class="col-md-4"><label class="form-label">نام خریدار *</label><input class="form-control" asp-for="CustomerName" required /></div>
+                    <div class="col-md-4"><label class="form-label">شرکت</label><input class="form-control" asp-for="CompanyName" /></div>
+                    <div class="col-md-4"><label class="form-label">موبایل</label><input class="form-control ltr" asp-for="Mobile" placeholder="09..." /></div>
+                    <div class="col-md-3"><label class="form-label">کد اقتصادی</label><input class="form-control ltr" asp-for="EconomicCode" /></div>
+                    <div class="col-md-3"><label class="form-label">شناسه / کد ملی</label><input class="form-control ltr" asp-for="NationalId" /></div>
+                    <div class="col-md-6"><label class="form-label">نشانی</label><input class="form-control" asp-for="Address" /></div>
+                </div>
+            </div>
+
+            <div class="a-card">
+                <div class="a-card-head"><h5><i class="bi bi-list-ol ic text-warning"></i>اقلام فاکتور</h5>
+                    <button type="button" class="btn btn-a btn-sm" data-inv-add><i class="bi bi-plus-lg ic"></i>ردیف جدید</button>
+                </div>
+                @if (!canPrice) { <div class="alert alert-info m-3 mb-0 small"><i class="bi bi-info-circle ic"></i>قیمت کالاهای کاتالوگ به‌صورت خودکار از جدول قیمت درج می‌شود و قابل تغییر نیست.</div> }
+                <div class="table-responsive">
+                    <table class="table a-table inv-items mb-0">
+                        <thead><tr><th style="width:36%">شرح کالا (جستجو در محصولات)</th><th>تعداد</th><th>واحد</th><th>فی (ریال)</th><th>تخفیف ٪</th><th>مبلغ</th><th></th></tr></thead>
+                        <tbody id="invRows">
+                            @for (var i = 0; i < Model.Items.Count; i++)
+                            {
+                                var it = Model.Items[i];
+                                <tr class="inv-row" data-locked="@(it.VariantId.HasValue && !canPrice ? "1" : "0")">
+                                    <td class="position-relative">
+                                        <input type="hidden" name="Items[@i].VariantId" value="@it.VariantId" data-f="VariantId" />
+                                        <input class="form-control" name="Items[@i].Description" value="@it.Description" data-f="Description" autocomplete="off" placeholder="نام یا کد کالا را تایپ کنید..." />
+                                        <div class="dropdown-menu w-100 inv-suggest"></div>
+                                    </td>
+                                    <td><input class="form-control" name="Items[@i].Quantity" value="@it.Quantity.ToString("0.##")" data-f="Quantity" inputmode="decimal" style="min-width:70px" /></td>
+                                    <td><input class="form-control" name="Items[@i].Unit" value="@it.Unit" data-f="Unit" style="min-width:70px" /></td>
+                                    <td><input class="form-control num" name="Items[@i].UnitPrice" value="@it.UnitPrice.ToString("0")" data-f="UnitPrice" data-money style="min-width:120px" /></td>
+                                    <td><input class="form-control" name="Items[@i].DiscountPercent" value="@it.DiscountPercent.ToString("0.##")" data-f="DiscountPercent" inputmode="decimal" style="min-width:60px" /></td>
+                                    <td class="num fw-bold" data-line>0</td>
+                                    <td><button type="button" class="btn btn-soft-danger btn-sm" data-inv-remove title="حذف ردیف"><i class="bi bi-x-lg"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3">
+            <div class="a-card a-card-body mb-4">
+                <div class="row g-3">
+                    <div class="col-6 col-xl-12"><label class="form-label">نوع</label><select class="form-select" asp-for="Type" asp-items="Html.GetEnumSelectList<InvoiceType>()"></select></div>
+                    @if (Can(Permissions.InvoicesEdit))
+                    {
+                        <div class="col-6 col-xl-12"><label class="form-label">وضعیت</label><select class="form-select" asp-for="Status" asp-items="Html.GetEnumSelectList<InvoiceStatus>()"></select></div>
+                    }
+                    <div class="col-12"><label class="form-label">تاریخ صدور</label><input class="form-control ltr" asp-for="IssueDate" placeholder="۱۴۰۵/۰۷/۱۷" /></div>
+                </div>
+            </div>
+            <div class="a-card a-card-body mb-4">
+                <label class="form-label">نحوه پرداخت</label>
+                <select class="form-select mb-3" asp-for="PaymentMethod" asp-items="Html.GetEnumSelectList<PaymentMethod>()" id="payMethod"></select>
+                <div data-pay="Mixed"><label class="form-label">مبلغ نقدی (ریال)</label><input class="form-control mb-3 num" asp-for="CashAmount" type="text" data-money /></div>
+                <div data-pay="Cheque Mixed">
+                    <div class="row g-2 mb-2">
+                        <div class="col-6"><label class="form-label">تعداد چک</label><input class="form-control" asp-for="ChequeCount" type="number" min="0" /></div>
+                        <div class="col-6"><label class="form-label">سررسید</label><input class="form-control ltr" asp-for="ChequeDueDate" placeholder="۱۴۰۵/۰۹/۰۱" /></div>
+                    </div>
+                    <label class="form-label">جزئیات چک‌ها</label>
+                    <textarea class="form-control mb-2" asp-for="ChequeDetails" rows="2" placeholder="شماره چک، بانک، ..."></textarea>
+                </div>
+            </div>
+            <div class="a-card a-card-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-6"><label class="form-label">تخفیف کل (ریال)</label><input class="form-control num" asp-for="ExtraDiscount" type="text" data-money data-calc /></div>
+                    <div class="col-6"><label class="form-label">مالیات ٪</label><input class="form-control" asp-for="TaxPercent" type="text" inputmode="decimal" data-calc /></div>
+                    <div class="col-12"><label class="form-label">هزینه حمل (ریال)</label><input class="form-control num" asp-for="ShippingCost" type="text" data-money data-calc /></div>
+                </div>
+                <div class="inv-total small">
+                    <div class="row-t"><span>جمع کل</span><b class="num" id="tSub">0</b></div>
+                    <div class="row-t"><span>تخفیف</span><b class="num text-danger" id="tDisc">0</b></div>
+                    <div class="row-t"><span>مالیات</span><b class="num" id="tTax">0</b></div>
+                    <div class="row-t grand"><span>قابل پرداخت</span><span class="num" id="tGrand">0</span></div>
+                </div>
+                <label class="form-label mt-3">توضیحات</label>
+                <textarea class="form-control mb-3" asp-for="Notes" rows="2"></textarea>
+                <button class="btn btn-a w-100 py-2"><i class="bi bi-check2-circle ic"></i>@(isNew ? "ثبت فاکتور" : "ذخیره تغییرات")</button>
+                <a asp-action="Index" class="btn btn-soft w-100 mt-2">انصراف</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+<template id="invRowTpl">
+    <tr class="inv-row" data-locked="0">
+        <td class="position-relative">
+            <input type="hidden" data-f="VariantId" />
+            <input class="form-control" data-f="Description" autocomplete="off" placeholder="نام یا کد کالا را تایپ کنید..." />
+            <div class="dropdown-menu w-100 inv-suggest"></div>
+        </td>
+        <td><input class="form-control" data-f="Quantity" value="1" inputmode="decimal" style="min-width:70px" /></td>
+        <td><input class="form-control" data-f="Unit" style="min-width:70px" /></td>
+        <td><input class="form-control num" data-f="UnitPrice" value="0" data-money style="min-width:120px" /></td>
+        <td><input class="form-control" data-f="DiscountPercent" value="0" inputmode="decimal" style="min-width:60px" /></td>
+        <td class="num fw-bold" data-line>0</td>
+        <td><button type="button" class="btn btn-soft-danger btn-sm" data-inv-remove title="حذف ردیف"><i class="bi bi-x-lg"></i></button></td>
+    </tr>
+</template>

@@ -1,0 +1,16 @@
+@model List<AuditLog>
+@{ ViewData["Title"] = "گزارش فعالیت کاربران"; int page = ViewBag.Page, pages = ViewBag.Pages; }
+<div class="a-card">
+    <div class="a-card-head"><h5><i class="bi bi-clock-history ic text-primary"></i>فعالیت‌ها</h5></div>
+    <form class="a-card-body border-bottom row g-2" method="get">
+        <div class="col-md-10"><input class="form-control" name="q" value="@ViewBag.Q" placeholder="جستجو کاربر، عملیات، جزئیات..." /></div>
+        <div class="col-md-2"><button class="btn btn-soft w-100"><i class="bi bi-search ic"></i>جستجو</button></div>
+    </form>
+    <div class="table-responsive">
+        <table class="table a-table table-hover">
+            <thead><tr><th>زمان</th><th>کاربر</th><th>عملیات</th><th>جزئیات</th><th>IP</th></tr></thead>
+            <tbody>@foreach (var a in Model) { <tr><td class="small text-nowrap">@D(a.At, true)</td><td>@a.UserName</td><td class="fw-bold">@a.Action</td><td class="small">@a.Details</td><td class="small ltr text-muted">@a.IpAddress</td></tr> }</tbody>
+        </table>
+    </div>
+    @if (pages > 1) { <nav class="p-3"><ul class="pagination justify-content-center mb-0 flex-wrap">@for (var i = 1; i <= Math.Min(pages, 30); i++) { <li class="page-item @(i == page ? "active" : "")"><a class="page-link" asp-route-page="@i" asp-route-q="@ViewBag.Q">@N(i)</a></li> }</ul></nav> }
+</div>

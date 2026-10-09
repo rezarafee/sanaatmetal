@@ -1,0 +1,62 @@
+@model Order
+@{ ViewData["Title"] = "سفارش " + Fmt.FaDigits(Model.Number); var showPrice = Can(Permissions.PricingView) || Can(Permissions.InvoicesView); }
+<div class="row g-4">
+    <div class="col-xl-8">
+        <div class="a-card">
+            <div class="a-card-head">
+                <h5><i class="bi bi-cart ic"></i>اقلام سفارش <span class="ltr d-inline-block text-muted">#@Model.Number</span></h5>
+                <div class="d-flex gap-2">
+                    @if (Model.InvoiceId.HasValue && (Can(Permissions.InvoicesView) || Can(Permissions.InvoicesCreate))) { <a class="btn btn-soft btn-sm" asp-controller="Invoices" asp-action="Details" asp-route-id="@Model.InvoiceId"><i class="bi bi-receipt ic"></i>مشاهده فاکتور</a> }
+                    @if (Can(Permissions.InvoicesCreate)) { <a class="btn btn-a btn-sm" asp-controller="Invoices" asp-action="Create" asp-route-orderId="@Model.Id"><i class="bi bi-receipt-cutoff ic"></i>صدور پیش‌فاکتور / فاکتور</a> }
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table a-table">
+                    <thead><tr><th>#</th><th>کالا</th><th>سایز</th><th>تعداد</th>@if (showPrice) { <th>فی</th><th>تخفیف</th><th>جمع</th> }</tr></thead>
+                    <tbody>
+                        @{ var i = 0; }
+                        @foreach (var it in Model.Items)
+                        {
+                            i++;
+                            <tr>
+                                <td>@N(i)</td><td class="fw-bold">@it.ProductName</td><td class="ltr">@it.VariantTitle</td><td>@N(it.Quantity) @it.Variant?.Unit</td>
+                                @if (showPrice)
+                                {
+                                    <td class="num">@(it.UnitPrice is null ? "تماس" : N(it.UnitPrice))</td>
+                                    <td>@(it.DiscountPercent > 0 ? N(it.DiscountPercent) + "٪" : "-")</td>
+                                    <td class="num">@(it.UnitPrice is null ? "-" : N(Math.Round(it.UnitPrice.Value * (100 - it.DiscountPercent) / 100 * it.Quantity)))</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                    @if (showPrice) { <tfoot><tr><td colspan="6" class="text-start fw-bold">جمع تقریبی (بدون اقلام تماس بگیرید)</td><td class="num fw-bold">@N(Model.EstimatedTotal)</td></tr></tfoot> }
+                </table>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Note)) { <div class="a-card-body border-top"><b>توضیحات مشتری:</b> @Model.Note</div> }
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="a-card a-card-body mb-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-person ic"></i>مشتری</h6>
+            <p class="mb-1"><span class="text-muted">موبایل:</span> <a href="tel:@Model.Mobile" class="ltr d-inline-block fw-bold">@Model.Mobile</a></p>
+            <p class="mb-1"><span class="text-muted">نام:</span> @Model.FullName</p>
+            <p class="mb-1"><span class="text-muted">شرکت:</span> @Model.CompanyName</p>
+            <p class="mb-1"><span class="text-muted">زبان سایت:</span> @(Model.Culture == "en" ? "انگلیسی" : "فارسی")</p>
+            <p class="mb-0"><span class="text-muted">تاریخ:</span> @D(Model.CreatedAt, true)</p>
+        </div>
+        <div class="a-card a-card-body">
+            <h6 class="fw-bold mb-3"><i class="bi bi-telephone-outbound ic"></i>پیگیری</h6>
+            <form method="post" asp-action="Update" asp-route-id="@Model.Id">
+                <fieldset disabled="@(!Can(Permissions.OrdersManage))">
+                    <select class="form-select mb-2" name="status">@foreach (var s in Enum.GetValues<OrderStatus>()) { <option value="@s" selected="@(Model.Status == s)">@s.DisplayName()</option> }</select>
+                    <textarea class="form-control mb-2" name="staffNote" rows="3" placeholder="یادداشت داخلی">@Model.StaffNote</textarea>
+                    <button class="btn btn-a w-100">ذخیره</button>
+                </fieldset>
+            </form>
+            @if (Can(Permissions.OrdersManage))
+            {
+                <form method="post" asp-action="Delete" asp-route-id="@Model.Id" data-confirm="سفارش حذف شود؟" class="mt-2"><button class="btn btn-soft-danger w-100"><i class="bi bi-trash3 ic"></i>حذف سفارش</button></form>
+            }
+        </div>
+    </div>
+</div>

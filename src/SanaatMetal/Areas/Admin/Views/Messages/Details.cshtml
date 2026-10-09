@@ -1,0 +1,44 @@
+@model ContactMessage
+@{ ViewData["Title"] = "پیام از " + Model.Name; var manage = Can(Permissions.MessagesManage); }
+<div class="row g-4">
+    <div class="col-xl-8">
+        <div class="a-card">
+            <div class="a-card-head">
+                <h5>@(Model.Subject ?? "بدون موضوع")</h5>
+                <a class="btn btn-a btn-sm" href="mailto:@Model.Email?subject=@Uri.EscapeDataString("پاسخ: " + (Model.Subject ?? ""))"><i class="bi bi-reply ic"></i>پاسخ با ایمیل</a>
+            </div>
+            <div class="a-card-body">
+                <p style="white-space:pre-wrap;line-height:2.1">@Model.Body</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="a-card a-card-body mb-4 small">
+            <p><span class="text-muted">نام:</span> <b>@Model.Name</b></p>
+            <p><span class="text-muted">ایمیل:</span> <a class="ltr d-inline-block" href="mailto:@Model.Email">@Model.Email</a></p>
+            <p><span class="text-muted">تلفن:</span> <a class="ltr d-inline-block" href="tel:@Model.Phone">@Model.Phone</a></p>
+            <p><span class="text-muted">شرکت:</span> @Model.Company</p>
+            <p><span class="text-muted">تاریخ:</span> @D(Model.CreatedAt, true)</p>
+            <p><span class="text-muted">زبان:</span> @(Model.Culture == "en" ? "انگلیسی" : "فارسی") — <span class="ltr d-inline-block text-muted">@Model.IpAddress</span></p>
+            <p class="mb-0"><span class="text-muted">وضعیت ایمیل:</span>
+                @if (Model.EmailSent) { <span class="pill pill-green">ارسال شد</span> } else { <span class="pill pill-orange">ارسال نشد</span> }</p>
+            @if (!Model.EmailSent && !string.IsNullOrEmpty(Model.EmailError)) { <div class="text-danger mt-2 ltr" style="font-size:.75rem">@Model.EmailError</div> }
+        </div>
+        @if (manage)
+        {
+            <div class="a-card a-card-body">
+                <form method="post" asp-action="Action" asp-route-id="@Model.Id" asp-route-op="note" class="mb-3">
+                    <label class="form-label">یادداشت داخلی</label>
+                    <textarea class="form-control mb-2" name="staffNote" rows="3">@Model.StaffNote</textarea>
+                    <button class="btn btn-soft btn-sm">ذخیره یادداشت</button>
+                </form>
+                <div class="d-flex flex-wrap gap-2">
+                    <form method="post" asp-action="Action" asp-route-id="@Model.Id" asp-route-op="resend"><button class="btn btn-soft-primary btn-sm"><i class="bi bi-send ic"></i>ارسال مجدد ایمیل</button></form>
+                    <form method="post" asp-action="Action" asp-route-id="@Model.Id" asp-route-op="unread"><button class="btn btn-soft btn-sm"><i class="bi bi-envelope ic"></i>خوانده‌نشده</button></form>
+                    <form method="post" asp-action="Action" asp-route-id="@Model.Id" asp-route-op="archive"><button class="btn btn-soft btn-sm"><i class="bi bi-archive ic"></i>@(Model.IsArchived ? "خروج از بایگانی" : "بایگانی")</button></form>
+                    <form method="post" asp-action="Action" asp-route-id="@Model.Id" asp-route-op="delete" data-confirm="پیام حذف شود؟"><button class="btn btn-soft-danger btn-sm"><i class="bi bi-trash3 ic"></i>حذف</button></form>
+                </div>
+            </div>
+        }
+    </div>
+</div>

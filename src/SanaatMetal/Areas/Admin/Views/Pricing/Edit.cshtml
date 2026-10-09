@@ -1,0 +1,59 @@
+@model SanaatMetal.Areas.Admin.Controllers.PriceInput
+@{
+    var v = (ProductVariant)ViewBag.Variant;
+    var history = (List<PriceRecord>)ViewBag.History;
+    ViewData["Title"] = "قیمت‌گذاری: " + v.Product!.NameFa + " " + v.Title;
+    var canEdit = Can(Permissions.PricingManage);
+}
+<div class="row g-4">
+    <div class="col-xl-5">
+        <div class="a-card">
+            <div class="a-card-head"><h5><i class="bi bi-tag ic text-success"></i>ثبت قیمت جدید</h5><a asp-controller="Products" asp-action="Edit" asp-route-id="@v.ProductId" class="small">صفحه محصول</a></div>
+            <form method="post" class="a-card-body" id="priceForm">
+                <fieldset disabled="@(!canEdit)">
+                    <div class="row g-3">
+                        <div class="col-6"><label class="form-label">قیمت خرید (ریال)</label><input class="form-control num" asp-for="PurchasePrice" type="text" data-money /></div>
+                        <div class="col-6"><label class="form-label">قیمت فروش (ریال) *</label><input class="form-control num fw-bold" asp-for="SalePrice" type="text" data-money /></div>
+                        <div class="col-6"><label class="form-label">قیمت فروش نقدی</label><input class="form-control num" asp-for="CashPrice" type="text" data-money /></div>
+                        <div class="col-6"><label class="form-label">قیمت فروش چکی</label><input class="form-control num" asp-for="ChequePrice" type="text" data-money /></div>
+                        <div class="col-6"><label class="form-label">مدت چک (روز)</label><input class="form-control" asp-for="ChequeTermDays" type="number" min="0" /></div>
+                        <div class="col-6"><label class="form-label">درصد تخفیف</label><input class="form-control" asp-for="DiscountPercent" type="text" inputmode="decimal" /></div>
+                        <div class="col-12"><label class="form-label">تأمین‌کننده</label><input class="form-control" asp-for="Supplier" /></div>
+                        <div class="col-12"><label class="form-label">توضیح</label><input class="form-control" asp-for="Note" /></div>
+                        <div class="col-12"><div class="form-check form-switch"><input class="form-check-input" asp-for="CallForPrice" /><label class="form-check-label" asp-for="CallForPrice">در سایت به‌جای قیمت «تماس بگیرید» نمایش داده شود</label></div></div>
+                    </div>
+                    <div class="inv-total mt-3 small" id="pricePreview">
+                        <div class="row-t"><span>قیمت پس از تخفیف</span><b id="ppFinal">-</b></div>
+                        <div class="row-t"><span>سود هر واحد</span><b id="ppProfit">-</b></div>
+                        <div class="row-t"><span>درصد سود</span><b id="ppMargin">-</b></div>
+                    </div>
+                    @if (canEdit) { <button class="btn btn-a w-100 mt-3"><i class="bi bi-check2 ic"></i>ثبت قیمت جدید</button> }
+                </fieldset>
+            </form>
+        </div>
+    </div>
+    <div class="col-xl-7">
+        <div class="a-card">
+            <div class="a-card-head"><h5><i class="bi bi-clock-history ic text-primary"></i>تاریخچه قیمت</h5></div>
+            <div class="table-responsive">
+                <table class="table a-table">
+                    <thead><tr><th>تاریخ</th><th>خرید</th><th>فروش</th><th>تخفیف</th><th>نقدی</th><th>چکی</th><th>ثبت‌کننده</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var h in history)
+                        {
+                            <tr class="@(h.IsCurrent ? "table-success" : "")">
+                                <td class="small">@D(h.CreatedAt, true)</td>
+                                <td class="num">@N(h.PurchasePrice)</td><td class="num fw-bold">@N(h.SalePrice)</td>
+                                <td>@(h.DiscountPercent > 0 ? N(h.DiscountPercent) + "٪" : "-")</td>
+                                <td class="num">@N(h.CashPrice)</td><td class="num">@N(h.ChequePrice)@(h.ChequeTermDays > 0 ? $" ({N(h.ChequeTermDays)} روز)" : "")</td>
+                                <td class="small">@h.CreatedByName<div class="text-muted">@h.Note</div></td>
+                                <td>@if (h.IsCurrent) { <span class="pill pill-green">جاری</span> }</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (history.Count == 0) { <div class="a-empty"><i class="bi bi-clock"></i>هنوز قیمتی ثبت نشده است.</div> }
+            </div>
+        </div>
+    </div>
+</div>

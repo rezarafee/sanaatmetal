@@ -1,0 +1,58 @@
+@model List<Invoice>
+@{
+    ViewData["Title"] = "فاکتورها";
+    InvoiceStatus? st = ViewBag.Status; InvoiceType? tp = ViewBag.Type;
+    int page = ViewBag.Page, pages = ViewBag.Pages;
+    var showMoney = Can(Permissions.InvoicesView);
+}
+<div class="a-card">
+    <div class="a-card-head">
+        <h5><i class="bi bi-receipt ic text-primary"></i>فاکتورها <span class="text-muted small">(@N((int)ViewBag.Total))</span></h5>
+        <div class="d-flex gap-2">
+            @if (Can(Permissions.InvoicesEdit)) { <a class="btn btn-soft btn-sm" asp-action="Trash"><i class="bi bi-trash3 ic"></i>سطل بازیافت</a> }
+            @if (Can(Permissions.InvoicesCreate)) { <a class="btn btn-a btn-sm" asp-action="Create"><i class="bi bi-plus-lg ic"></i>فاکتور جدید</a> }
+        </div>
+    </div>
+    <form class="a-card-body border-bottom row g-2" method="get">
+        <div class="col-md-3"><input class="form-control" name="q" value="@ViewBag.Q" placeholder="شماره، خریدار، موبایل..." /></div>
+        <div class="col-md-2"><select class="form-select" name="type"><option value="">همه انواع</option>@foreach (var t in Enum.GetValues<InvoiceType>()) { <option value="@t" selected="@(tp == t)">@t.DisplayName()</option> }</select></div>
+        <div class="col-md-2"><select class="form-select" name="status"><option value="">همه وضعیت‌ها</option>@foreach (var s in Enum.GetValues<InvoiceStatus>()) { <option value="@s" selected="@(st == s)">@s.DisplayName()</option> }</select></div>
+        <div class="col-md-2"><input class="form-control ltr" name="from" value="@ViewBag.From" placeholder="از ۱۴۰۵/۰۱/۰۱" /></div>
+        <div class="col-md-2"><input class="form-control ltr" name="to" value="@ViewBag.To" placeholder="تا ۱۴۰۵/۱۲/۲۹" /></div>
+        <div class="col-md-1"><button class="btn btn-soft w-100"><i class="bi bi-search"></i></button></div>
+    </form>
+    <div class="table-responsive">
+        <table class="table a-table table-hover">
+            <thead><tr><th>شماره</th><th>نوع</th><th>تاریخ</th><th>خریدار</th><th>پرداخت</th>@if (showMoney) { <th>مبلغ کل</th> }<th>وضعیت</th><th>ثبت</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var i in Model)
+                {
+                    <tr>
+                        <td class="ltr fw-bold">@i.Number</td>
+                        <td>@i.Type.DisplayName()</td>
+                        <td>@D(i.IssueDate)</td>
+                        <td>@i.CustomerName<div class="small text-muted">@i.CompanyName</div></td>
+                        <td>@i.PaymentMethod.DisplayName()</td>
+                        @if (showMoney) { <td class="num fw-bold">@N(i.GrandTotal)</td> }
+                        <td><partial name="_InvoiceStatus" model="i.Status" /></td>
+                        <td class="small text-muted">@i.CreatedByName</td>
+                        <td>
+                            <div class="a-actions">
+                                <a class="btn btn-soft-primary" asp-action="Details" asp-route-id="@i.Id" title="مشاهده"><i class="bi bi-eye"></i></a>
+                                <a class="btn btn-soft" asp-action="Pdf" asp-route-id="@i.Id" title="PDF"><i class="bi bi-filetype-pdf"></i></a>
+                                @if (Can(Permissions.InvoicesEdit)) { <a class="btn btn-soft-success" asp-action="Edit" asp-route-id="@i.Id" title="ویرایش"><i class="bi bi-pencil"></i></a> }
+                                @if (Can(Permissions.InvoicesDelete)) { <form method="post" asp-action="Delete" asp-route-id="@i.Id" data-confirm="فاکتور @Fmt.FaDigits(i.Number) حذف شود؟"><button class="btn btn-soft-danger" title="حذف"><i class="bi bi-trash3"></i></button></form> }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            @if (showMoney && Model.Count > 0) { <tfoot><tr><td colspan="5" class="fw-bold">جمع فاکتورهای فیلتر شده (بدون باطل‌شده)</td><td class="num fw-black">@N((decimal)ViewBag.Sum)</td><td colspan="3"></td></tr></tfoot> }
+        </table>
+        @if (Model.Count == 0) { <div class="a-empty"><i class="bi bi-receipt"></i>فاکتوری یافت نشد.</div> }
+    </div>
+    @if (pages > 1)
+    {
+        <nav class="p-3"><ul class="pagination justify-content-center mb-0">@for (var p = 1; p <= pages; p++) { <li class="page-item @(p == page ? "active" : "")"><a class="page-link" asp-route-page="@p" asp-route-q="@ViewBag.Q" asp-route-status="@st" asp-route-type="@tp" asp-route-from="@ViewBag.From" asp-route-to="@ViewBag.To">@N(p)</a></li> }</ul></nav>
+    }
+</div>

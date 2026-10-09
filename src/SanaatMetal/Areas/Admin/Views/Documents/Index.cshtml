@@ -1,0 +1,41 @@
+@model List<ProductDocument>
+@{
+    ViewData["Title"] = "گواهی‌ها و دیتاشیت‌ها";
+    DocumentType? type = ViewBag.Type;
+    string? state = ViewBag.State;
+}
+<div class="a-card">
+    <div class="a-card-head"><h5><i class="bi bi-file-earmark-check ic text-success"></i>همه گواهی‌ها و دیتاشیت‌ها</h5><span class="small text-muted">برای افزودن مستند وارد صفحه محصول شوید</span></div>
+    <form class="a-card-body border-bottom row g-2" method="get">
+        <div class="col-md-5"><input class="form-control" name="q" value="@ViewBag.Q" placeholder="جستجو عنوان، محصول یا صادرکننده..." /></div>
+        <div class="col-md-3"><select class="form-select" name="type" data-autosubmit><option value="">همه انواع</option>@foreach (var t in Enum.GetValues<DocumentType>()) { <option value="@t" selected="@(type == t)">@t.DisplayName()</option> }</select></div>
+        <div class="col-md-3">
+            <select class="form-select" name="state" data-autosubmit>
+                <option value="">فعال</option>
+                <option value="soon" selected="@(state == "soon")">رو به انقضا (۴۵ روز)</option>
+                <option value="expired" selected="@(state == "expired")">منقضی شده</option>
+                <option value="inactive" selected="@(state == "inactive")">آرشیو (نسخه‌های قدیمی)</option>
+                <option value="all" selected="@(state == "all")">همه</option>
+            </select>
+        </div>
+        <div class="col-md-1"><button class="btn btn-soft w-100"><i class="bi bi-search"></i></button></div>
+    </form>
+    <div class="table-responsive">
+        <table class="table a-table table-hover">
+            <thead><tr><th>محصول</th><th>نوع</th><th>عنوان</th><th>نسخه</th><th>صادرکننده</th><th>اعتبار تا</th><th>بارگذاری</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var d in Model)
+                {
+                    <tr class="@(d.IsActive ? "" : "opacity-50")">
+                        <td><a asp-controller="Products" asp-action="Edit" asp-route-id="@d.ProductId" asp-fragment="docs" class="fw-bold">@d.Product?.NameFa</a></td>
+                        <td>@d.Type.DisplayName()</td><td>@d.TitleFa</td><td class="ltr">@d.Version</td><td>@d.Issuer</td>
+                        <td>@if (d.ExpiresAt.HasValue) { <span class="pill @(d.IsExpired ? "pill-red" : d.ExpiresAt < DateTime.UtcNow.AddDays(45) ? "pill-orange" : "pill-green")">@Fmt.FaDigits(Fmt.JalaliDateOnly(d.ExpiresAt))</span> } else { <span class="text-muted">—</span> }</td>
+                        <td class="small text-muted">@D(d.CreatedAt)</td>
+                        <td><div class="a-actions"><a class="btn btn-soft" href="@d.FilePath" target="_blank"><i class="bi bi-download"></i></a></div></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (Model.Count == 0) { <div class="a-empty"><i class="bi bi-folder2-open"></i>موردی یافت نشد.</div> }
+    </div>
+</div>

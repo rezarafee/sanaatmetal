@@ -1,0 +1,38 @@
+@{
+    ViewData["Title"] = "سطوح دسترسی";
+    var map = (Dictionary<string, HashSet<string>>)ViewBag.Map;
+    var roles = Roles.All.Where(r => r != Roles.SuperAdmin).ToArray();
+}
+<form method="post">
+    <div class="a-card">
+        <div class="a-card-head">
+            <h5><i class="bi bi-shield-lock ic text-danger"></i>ماتریس دسترسی نقش‌ها</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-a btn-sm"><i class="bi bi-check2 ic"></i>ذخیره</button>
+                <button class="btn btn-soft btn-sm" formaction="/admin/roles/reset" data-confirm="دسترسی‌ها به حالت پیش‌فرض برگردد؟"><i class="bi bi-arrow-counterclockwise ic"></i>پیش‌فرض</button>
+            </div>
+        </div>
+        <div class="alert alert-warning m-3 small"><i class="bi bi-info-circle ic"></i>سوپر ادمین همیشه به همه بخش‌ها دسترسی دارد. تغییرات حداکثر تا ۵ دقیقه برای کاربران وارد شده اعمال می‌شود.</div>
+        <div class="table-responsive">
+            <table class="table a-table perm-table">
+                <thead><tr><th>دسترسی</th>@foreach (var r in roles) { <th>@Roles.Title(r)</th> }</tr></thead>
+                <tbody>
+                    @foreach (var g in Permissions.Groups)
+                    {
+                        <tr><td colspan="@(roles.Length + 1)" class="fw-black small text-primary bg-body-tertiary">@g.Group</td></tr>
+                        @foreach (var (key, title) in g.Items)
+                        {
+                            <tr>
+                                <td>@title <span class="small text-muted ltr d-inline-block">@key</span></td>
+                                @foreach (var r in roles)
+                                {
+                                    <td><div class="form-check form-switch d-inline-block"><input class="form-check-input" type="checkbox" name="perms[@r]" value="@key" checked="@(map.GetValueOrDefault(r)?.Contains(key) == true)" aria-label="@title" /></div></td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</form>

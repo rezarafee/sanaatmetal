@@ -1,0 +1,224 @@
+@model Product
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "محصول جدید" : "ویرایش: " + Model.NameFa;
+    var cats = (List<Category>)ViewBag.Categories;
+    var mats = (List<Material>)ViewBag.Materials;
+    string J(object o) => System.Text.Json.JsonSerializer.Serialize(o);
+}
+<form method="post" asp-action="Save" asp-route-id="@Model.Id">
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="a-card">
+                <div class="a-card-head"><h5><i class="bi bi-info-circle ic text-primary"></i>اطلاعات اصلی</h5>
+                    @if (!isNew) { <a href="/products/@Model.Slug" target="_blank" class="btn btn-soft btn-sm"><i class="bi bi-eye ic"></i>مشاهده در سایت</a> }
+                </div>
+                <div class="a-card-body">
+                    <div asp-validation-summary="All" class="text-danger small"></div>
+                    <ul class="nav nav-pills mb-3 gap-1" role="tablist">
+                        <li class="nav-item"><button type="button" class="nav-link active" data-bs-toggle="pill" data-bs-target="#fa">فارسی</button></li>
+                        <li class="nav-item"><button type="button" class="nav-link" data-bs-toggle="pill" data-bs-target="#en">English</button></li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="fa">
+                            <div class="mb-3"><label class="form-label">نام محصول *</label><input class="form-control" asp-for="NameFa" required /></div>
+                            <div class="mb-3"><label class="form-label">خلاصه (نمایش در کارت و اسلایدر)</label><textarea class="form-control" asp-for="SummaryFa" rows="2"></textarea></div>
+                            <div class="mb-3"><label class="form-label">توضیحات کامل</label><textarea class="form-control" asp-for="DescriptionFa" rows="7"></textarea></div>
+                        </div>
+                        <div class="tab-pane fade" id="en">
+                            <div class="mb-3"><label class="form-label">Product name</label><input class="form-control ltr" asp-for="NameEn" /></div>
+                            <div class="mb-3"><label class="form-label">Summary</label><textarea class="form-control ltr" asp-for="SummaryEn" rows="2"></textarea></div>
+                            <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control ltr" asp-for="DescriptionEn" rows="7"></textarea></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="a-card a-card-body">
+                <div class="row g-3">
+                    <div class="col-6"><label class="form-label">کد کالا *</label><input class="form-control ltr" asp-for="Code" required /></div>
+                    <div class="col-6"><label class="form-label">نامک (آدرس)</label><input class="form-control ltr" asp-for="Slug" placeholder="خودکار" /></div>
+                    <div class="col-12">
+                        <label class="form-label">دسته‌بندی *</label>
+                        <select class="form-select" asp-for="CategoryId" required>
+                            <option value="">انتخاب کنید</option>
+                            @foreach (var c in cats) { <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@(c.ParentId != null ? "— " : "")@c.NameFa</option> }
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">متریال</label>
+                        <select class="form-select" asp-for="MaterialId">
+                            <option value="">—</option>
+                            @foreach (var m in mats) { <option value="@m.Id" selected="@(Model.MaterialId == m.Id)">@m.NameFa</option> }
+                        </select>
+                    </div>
+                    <div class="col-12"><label class="form-label">استاندارد</label><input class="form-control ltr" asp-for="Standard" placeholder="ASME B16.5" /></div>
+                    <div class="col-6"><label class="form-label">برند</label><input class="form-control" asp-for="Brand" /></div>
+                    <div class="col-6"><label class="form-label">کشور سازنده</label><input class="form-control" asp-for="Origin" /></div>
+                    <div class="col-6"><label class="form-label">ترتیب</label><input class="form-control" asp-for="SortOrder" type="number" /></div>
+                    <div class="col-12">
+                        <div class="form-check form-switch"><input class="form-check-input" asp-for="IsActive" /><label class="form-check-label" asp-for="IsActive">نمایش در سایت</label></div>
+                        <div class="form-check form-switch"><input class="form-check-input" asp-for="IsFeatured" /><label class="form-check-label" asp-for="IsFeatured">محصول ویژه (صفحه اصلی)</label></div>
+                        <div class="form-check form-switch"><input class="form-check-input" asp-for="CallForPrice" /><label class="form-check-label" asp-for="CallForPrice">به‌جای قیمت «تماس بگیرید» نمایش داده شود</label></div>
+                    </div>
+                </div>
+                <button class="btn btn-a w-100 mt-4"><i class="bi bi-check2 ic"></i>ذخیره محصول</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@if (!isNew)
+{
+    <!-- ===== Variants ===== -->
+    <div class="a-card mt-4" id="variants">
+        <div class="a-card-head">
+            <h5><i class="bi bi-rulers ic text-warning"></i>سایزها و مشخصات</h5>
+            <button class="btn btn-a btn-sm" data-bs-toggle="modal" data-bs-target="#variantModal" data-fill='@J(new { Id = 0, Unit = "عدد", IsActive = true, SortOrder = Model.Variants.Count + 1 })'><i class="bi bi-plus-lg ic"></i>افزودن سایز</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table a-table table-hover">
+                <thead><tr><th>سایز</th><th>کلاس</th><th>اسکجول</th><th>SKU</th><th>واحد</th><th>موجودی</th>@if (Can(Permissions.PricingView)) { <th>قیمت فروش</th><th>تخفیف</th> }<th>وضعیت</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var v in Model.Variants)
+                    {
+                        <tr>
+                            <td class="ltr fw-bold">@v.Size</td><td class="ltr">@v.PressureClass</td><td class="ltr">@v.Schedule</td><td class="ltr small">@v.Sku</td>
+                            <td>@v.Unit</td><td>@N(v.Stock)</td>
+                            @if (Can(Permissions.PricingView))
+                            {
+                                <td class="num">@(v.CallForPrice ? "تماس بگیرید" : N(v.SalePrice))</td><td>@(v.DiscountPercent > 0 ? N(v.DiscountPercent) + "٪" : "-")</td>
+                            }
+                            <td>@if (v.IsActive) { <span class="pill pill-green">فعال</span> } else { <span class="pill pill-gray">غیرفعال</span> }</td>
+                            <td>
+                                <div class="a-actions">
+                                    @if (Can(Permissions.PricingManage)) { <a class="btn btn-soft-success" asp-controller="Pricing" asp-action="Edit" asp-route-id="@v.Id" title="قیمت‌گذاری"><i class="bi bi-tag"></i></a> }
+                                    <button class="btn btn-soft-primary" title="ویرایش" data-bs-toggle="modal" data-bs-target="#variantModal" data-fill='@J(new { v.Id, v.Size, v.PressureClass, v.Schedule, v.Sku, v.Unit, v.ExtraSpecs, v.Stock, v.IsActive, v.CallForPrice, v.SortOrder })'><i class="bi bi-pencil"></i></button>
+                                    <form method="post" asp-action="DeleteVariant" asp-route-productId="@Model.Id" asp-route-id="@v.Id" data-confirm="سایز @v.Size حذف شود؟"><button class="btn btn-soft-danger"><i class="bi bi-trash3"></i></button></form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (Model.Variants.Count == 0) { <div class="a-empty"><i class="bi bi-rulers"></i>هنوز سایزی تعریف نشده است. برای فروش، حداقل یک سایز اضافه کنید.</div> }
+        </div>
+    </div>
+
+    <!-- ===== Images ===== -->
+    <div class="a-card mt-4" id="images">
+        <div class="a-card-head"><h5><i class="bi bi-images ic text-primary"></i>تصاویر محصول</h5><span class="small text-muted">ستاره = تصویر اصلی ، <i class="bi bi-display"></i> = نمایش در اسلایدر صفحه اصلی</span></div>
+        <div class="a-card-body">
+            <div class="row g-3 row-cols-2 row-cols-md-4 row-cols-xl-6">
+                @foreach (var img in Model.Images)
+                {
+                    <div class="col">
+                        <div class="a-img-tile">
+                            <img src="@img.FilePath" alt="" loading="lazy" />
+                            <div class="flags">
+                                @if (img.IsMain) { <span class="pill pill-orange"><i class="bi bi-star-fill"></i></span> }
+                                @if (img.ShowInHomeSlider) { <span class="pill pill-blue"><i class="bi bi-display"></i></span> }
+                            </div>
+                            <div class="tools">
+                                @foreach (var (op, icon, title) in new[] { ("main", "bi-star", "تصویر اصلی"), ("slider", "bi-display", "اسلایدر صفحه اصلی"), ("up", "bi-arrow-up", "جلوتر") })
+                                {
+                                    <form method="post" asp-action="ImageAction" asp-route-productId="@Model.Id" asp-route-id="@img.Id" asp-route-op="@op"><button class="btn btn-sm btn-light" title="@title"><i class="bi @icon"></i></button></form>
+                                }
+                                <form method="post" asp-action="ImageAction" asp-route-productId="@Model.Id" asp-route-id="@img.Id" asp-route-op="delete" data-confirm="تصویر حذف شود؟"><button class="btn btn-sm btn-danger" title="حذف"><i class="bi bi-trash3"></i></button></form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <form method="post" enctype="multipart/form-data" asp-action="UploadImages" asp-route-productId="@Model.Id" class="a-drop mt-3">
+                <i class="bi bi-cloud-arrow-up fs-2 d-block"></i>
+                <p class="mb-2">انتخاب تصاویر (JPG، PNG، WEBP — حداکثر ۵ مگابایت برای هر فایل)</p>
+                <div class="d-flex flex-wrap gap-2 justify-content-center align-items-center">
+                    <input type="file" name="images" multiple accept=".jpg,.jpeg,.png,.webp" class="form-control" style="max-width:340px" required />
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="showInSlider" value="true" id="sl" /><label class="form-check-label" for="sl">نمایش در اسلایدر صفحه اصلی</label></div>
+                    <button class="btn btn-a"><i class="bi bi-upload ic"></i>بارگذاری</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== Documents ===== -->
+    <div class="a-card mt-4" id="docs">
+        <div class="a-card-head"><h5><i class="bi bi-file-earmark-check ic text-success"></i>گواهی‌نامه‌ها و دیتاشیت‌ها</h5><span class="small text-muted">نسخه‌های قدیمی غیرفعال و نگهداری می‌شوند</span></div>
+        <div class="table-responsive">
+            <table class="table a-table">
+                <thead><tr><th>نوع</th><th>عنوان</th><th>نسخه</th><th>صادرکننده</th><th>تاریخ صدور</th><th>اعتبار تا</th><th>فایل</th><th>وضعیت</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var d in Model.Documents)
+                    {
+                        <tr class="@(d.IsActive ? "" : "opacity-50")">
+                            <td>@d.Type.DisplayName()</td><td class="fw-bold">@d.TitleFa</td><td class="ltr">@d.Version</td><td>@d.Issuer</td>
+                            <td>@Fmt.FaDigits(Fmt.JalaliDateOnly(d.IssuedAt))</td>
+                            <td class="@(d.IsExpired ? "text-danger fw-bold" : "")">@Fmt.FaDigits(Fmt.JalaliDateOnly(d.ExpiresAt))</td>
+                            <td><a href="@d.FilePath" target="_blank" class="small"><i class="bi bi-download ic"></i>@Fmt.FileSize(d.FileSize)</a></td>
+                            <td>@if (d.IsActive) { <span class="pill pill-green">فعال</span> } else { <span class="pill pill-gray">آرشیو</span> }</td>
+                            <td>
+                                <div class="a-actions">
+                                    <form method="post" asp-action="DocumentAction" asp-route-productId="@Model.Id" asp-route-id="@d.Id" asp-route-op="toggle"><button class="btn btn-soft" title="فعال/آرشیو"><i class="bi bi-archive"></i></button></form>
+                                    <form method="post" asp-action="DocumentAction" asp-route-productId="@Model.Id" asp-route-id="@d.Id" asp-route-op="delete" data-confirm="مستند «@d.TitleFa» برای همیشه حذف شود؟"><button class="btn btn-soft-danger"><i class="bi bi-trash3"></i></button></form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <form method="post" enctype="multipart/form-data" asp-action="UploadDocument" asp-route-productId="@Model.Id" class="a-card-body border-top">
+            <h6 class="fw-bold mb-3"><i class="bi bi-plus-circle ic"></i>بارگذاری مستند جدید / نسخه جدید</h6>
+            <div class="row g-2">
+                <div class="col-md-2">
+                    <select class="form-select" name="Type">
+                        @foreach (var t in Enum.GetValues<DocumentType>()) { <option value="@t">@t.DisplayName()</option> }
+                    </select>
+                </div>
+                <div class="col-md-3"><input class="form-control" name="TitleFa" placeholder="عنوان فارسی * (مثلا MTC 3.1)" required /></div>
+                <div class="col-md-3"><input class="form-control ltr" name="TitleEn" placeholder="English title" /></div>
+                <div class="col-md-2"><input class="form-control ltr" name="Version" placeholder="نسخه / سال" /></div>
+                <div class="col-md-2"><input class="form-control" name="Issuer" placeholder="صادرکننده" /></div>
+                <div class="col-md-2"><input class="form-control ltr" name="IssuedAt" placeholder="صدور ۱۴۰۵/۰۱/۰۱" /></div>
+                <div class="col-md-2"><input class="form-control ltr" name="ExpiresAt" placeholder="انقضا ۱۴۰۶/۰۱/۰۱" /></div>
+                <div class="col-md-4"><input type="file" class="form-control" name="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.zip" required /></div>
+                <div class="col-md-2 d-flex align-items-center"><div class="form-check"><input class="form-check-input" type="checkbox" name="ReplacePrevious" value="true" checked id="rp" /><input type="hidden" name="ReplacePrevious" value="false" /><label class="form-check-label small" for="rp">جایگزین نسخه قبلی</label></div></div>
+                <div class="col-md-2"><button class="btn btn-a w-100"><i class="bi bi-upload ic"></i>بارگذاری</button></div>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal fade" id="variantModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <form class="modal-content" method="post" asp-action="SaveVariant" asp-route-productId="@Model.Id">
+                <div class="modal-header border-0"><h5 class="modal-title fw-bold"><i class="bi bi-rulers ic"></i>سایز</h5><button type="button" class="btn-close ms-0" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="hidden" name="Id" />
+                    <div class="row g-3">
+                        <div class="col-md-4"><label class="form-label">سایز *</label><input class="form-control ltr" name="Size" required placeholder='2"' /></div>
+                        <div class="col-md-4"><label class="form-label">کلاس فشار</label><input class="form-control ltr" name="PressureClass" placeholder="150#" /></div>
+                        <div class="col-md-4"><label class="form-label">اسکجول / ضخامت</label><input class="form-control ltr" name="Schedule" placeholder="SCH40" /></div>
+                        <div class="col-md-4"><label class="form-label">SKU</label><input class="form-control ltr" name="Sku" /></div>
+                        <div class="col-md-4"><label class="form-label">واحد</label><input class="form-control" name="Unit" list="units" /><datalist id="units"><option value="عدد"></option><option value="شاخه"></option><option value="متر"></option><option value="کیلوگرم"></option><option value="ست"></option></datalist></div>
+                        <div class="col-md-4"><label class="form-label">موجودی</label><input class="form-control" name="Stock" inputmode="decimal" /></div>
+                        <div class="col-md-8"><label class="form-label">مشخصات تکمیلی</label><input class="form-control" name="ExtraSpecs" /></div>
+                        <div class="col-md-4"><label class="form-label">ترتیب</label><input class="form-control" name="SortOrder" type="number" /></div>
+                        @if (Can(Permissions.PricingManage))
+                        {
+                            <div class="col-12 small text-muted" data-new-only>قیمت اولیه (فقط هنگام ایجاد؛ بعداً از بخش قیمت‌گذاری با تاریخچه تغییر دهید):</div>
+                            <div class="col-md-6" data-new-only><label class="form-label">قیمت خرید (ریال)</label><input class="form-control" name="PurchasePrice" data-money /></div>
+                            <div class="col-md-6" data-new-only><label class="form-label">قیمت فروش (ریال)</label><input class="form-control" name="SalePrice" data-money /></div>
+                        }
+                        <div class="col-12 d-flex gap-4">
+                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="IsActive" value="true" id="vA" /><label class="form-check-label" for="vA">فعال</label></div>
+                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="CallForPrice" value="true" id="vC" /><label class="form-check-label" for="vC">تماس بگیرید (بدون قیمت)</label></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0"><button class="btn btn-a px-4"><i class="bi bi-check2 ic"></i>ذخیره</button></div>
+            </form>
+        </div>
+    </div>
+}

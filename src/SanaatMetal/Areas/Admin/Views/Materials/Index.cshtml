@@ -1,0 +1,47 @@
+@model List<Material>
+@{
+    ViewData["Title"] = "متریال‌ها";
+    var counts = (Dictionary<int, int>)ViewBag.Counts;
+}
+<div class="a-card">
+    <div class="a-card-head">
+        <h5><i class="bi bi-layers ic text-primary"></i>متریال‌ها (جنس کالا)</h5>
+        <button class="btn btn-a btn-sm" data-bs-toggle="modal" data-bs-target="#matModal" data-fill='{"id":0}'><i class="bi bi-plus-lg ic"></i>متریال جدید</button>
+    </div>
+    <div class="table-responsive">
+        <table class="table a-table table-hover">
+            <thead><tr><th>نام</th><th>نام انگلیسی</th><th>کد</th><th>محصولات</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var m in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">@m.NameFa</td><td class="ltr">@m.NameEn</td><td class="ltr">@m.Code</td><td>@N(counts.GetValueOrDefault(m.Id))</td>
+                        <td>
+                            <div class="a-actions">
+                                <button class="btn btn-soft-primary" data-bs-toggle="modal" data-bs-target="#matModal" data-fill='@System.Text.Json.JsonSerializer.Serialize(new { id = m.Id, NameFa = m.NameFa, NameEn = m.NameEn, Code = m.Code, Description = m.Description })'><i class="bi bi-pencil"></i></button>
+                                <form method="post" asp-action="Delete" asp-route-id="@m.Id" data-confirm="متریال «@m.NameFa» حذف شود؟"><button class="btn btn-soft-danger"><i class="bi bi-trash3"></i></button></form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (Model.Count == 0) { <div class="a-empty"><i class="bi bi-layers"></i>متریالی ثبت نشده است.</div> }
+    </div>
+</div>
+<div class="modal fade" id="matModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="post" asp-action="Save" data-action-base="/admin/materials/save/">
+            <div class="modal-header border-0"><h5 class="modal-title fw-bold">متریال</h5><button type="button" class="btn-close ms-0" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label">نام فارسی *</label><input class="form-control" name="NameFa" required /></div>
+                    <div class="col-md-6"><label class="form-label">نام انگلیسی</label><input class="form-control ltr" name="NameEn" /></div>
+                    <div class="col-md-6"><label class="form-label">کد</label><input class="form-control ltr" name="Code" /></div>
+                    <div class="col-12"><label class="form-label">توضیحات</label><textarea class="form-control" name="Description" rows="2"></textarea></div>
+                </div>
+            </div>
+            <div class="modal-footer border-0"><button class="btn btn-a px-4">ذخیره</button></div>
+        </form>
+    </div>
+</div>

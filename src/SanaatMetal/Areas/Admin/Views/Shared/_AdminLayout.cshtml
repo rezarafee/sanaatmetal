@@ -1,0 +1,157 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string Act(params string[] names) => names.Contains(controller, StringComparer.OrdinalIgnoreCase) ? "active" : "";
+    var name = User.DisplayName();
+    var roles = string.Join("، ", Roles.All.Where(r => User.IsInRole(r)).Select(Roles.Title));
+    int newOrders = ViewBag.NewOrders ?? 0;
+    int unread = ViewBag.UnreadMessages ?? 0;
+}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>@ViewData["Title"] | پنل مدیریت</title>
+    <script src="~/js/theme-init.js" asp-append-version="true"></script>
+    <link rel="stylesheet" href="~/css/fonts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+    <aside class="a-side" id="aSide">
+        <a class="a-brand" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+            <span class="a-brand-logo"><img src="~/img/brand/logo-mark.svg" alt="" width="42" height="42" /></span>
+            <div><b>صنعت متال</b><small>پنل مدیریت</small></div>
+        </a>
+        <nav class="a-menu">
+            @if (Can(Permissions.Dashboard))
+            {
+                <a class="a-link @Act("Dashboard")" asp-area="Admin" asp-controller="Dashboard" asp-action="Index"><i class="bi bi-grid-1x2"></i><span>داشبورد</span></a>
+            }
+            @if (Can(Permissions.CatalogView))
+            {
+                <div class="a-menu-title">کاتالوگ</div>
+                <a class="a-link @Act("Products")" asp-area="Admin" asp-controller="Products" asp-action="Index"><i class="bi bi-box-seam"></i><span>محصولات</span></a>
+                @if (Can(Permissions.CatalogManage))
+                {
+                    <a class="a-link @Act("Categories")" asp-area="Admin" asp-controller="Categories" asp-action="Index"><i class="bi bi-diagram-3"></i><span>دسته‌بندی‌ها</span></a>
+                    <a class="a-link @Act("Materials")" asp-area="Admin" asp-controller="Materials" asp-action="Index"><i class="bi bi-layers"></i><span>متریال‌ها</span></a>
+                    <a class="a-link @Act("Documents")" asp-area="Admin" asp-controller="Documents" asp-action="Index"><i class="bi bi-file-earmark-check"></i><span>گواهی‌ها و دیتاشیت‌ها</span></a>
+                }
+            }
+            @if (Can(Permissions.PricingView) || Can(Permissions.OrdersView) || Can(Permissions.InvoicesView) || Can(Permissions.InvoicesCreate) || Can(Permissions.Customers))
+            {
+                <div class="a-menu-title">فروش</div>
+                @if (Can(Permissions.PricingView))
+                {
+                    <a class="a-link @Act("Pricing")" asp-area="Admin" asp-controller="Pricing" asp-action="Index"><i class="bi bi-tags"></i><span>قیمت‌گذاری</span></a>
+                }
+                @if (Can(Permissions.OrdersView))
+                {
+                    <a class="a-link @Act("Orders")" asp-area="Admin" asp-controller="Orders" asp-action="Index"><i class="bi bi-cart-check"></i><span>سفارش‌های سایت</span>@if (newOrders > 0) { <span class="badge rounded-pill text-bg-warning">@N(newOrders)</span> }</a>
+                }
+                @if (Can(Permissions.InvoicesView) || Can(Permissions.InvoicesCreate))
+                {
+                    <a class="a-link @Act("Invoices")" asp-area="Admin" asp-controller="Invoices" asp-action="Index"><i class="bi bi-receipt"></i><span>فاکتورها</span></a>
+                }
+                @if (Can(Permissions.Customers))
+                {
+                    <a class="a-link @Act("Customers")" asp-area="Admin" asp-controller="Customers" asp-action="Index"><i class="bi bi-person-vcard"></i><span>خریداران</span></a>
+                }
+            }
+            @if (Can(Permissions.Clients) || Can(Permissions.MessagesView) || Can(Permissions.Reports))
+            {
+                <div class="a-menu-title">ارتباطات و گزارش</div>
+                @if (Can(Permissions.Clients))
+                {
+                    <a class="a-link @Act("Clients")" asp-area="Admin" asp-controller="Clients" asp-action="Index"><i class="bi bi-buildings"></i><span>مشتریان ما (اسلایدر)</span></a>
+                }
+                @if (Can(Permissions.MessagesView))
+                {
+                    <a class="a-link @Act("Messages")" asp-area="Admin" asp-controller="Messages" asp-action="Index"><i class="bi bi-envelope-paper"></i><span>پیام‌ها و ایمیل‌ها</span>@if (unread > 0) { <span class="badge rounded-pill text-bg-danger">@N(unread)</span> }</a>
+                }
+                @if (Can(Permissions.Reports))
+                {
+                    <a class="a-link @Act("Reports")" asp-area="Admin" asp-controller="Reports" asp-action="Index"><i class="bi bi-bar-chart-line"></i><span>گزارش‌ها</span></a>
+                }
+            }
+            @if (Can(Permissions.Settings) || Can(Permissions.Users) || Can(Permissions.Audit))
+            {
+                <div class="a-menu-title">سیستم</div>
+                @if (Can(Permissions.Settings))
+                {
+                    <a class="a-link @Act("Settings")" asp-area="Admin" asp-controller="Settings" asp-action="Index"><i class="bi bi-sliders"></i><span>تنظیمات سایت</span></a>
+                }
+                @if (Can(Permissions.Users))
+                {
+                    <a class="a-link @Act("Users")" asp-area="Admin" asp-controller="Users" asp-action="Index"><i class="bi bi-people"></i><span>کاربران</span></a>
+                    <a class="a-link @Act("Roles")" asp-area="Admin" asp-controller="Roles" asp-action="Index"><i class="bi bi-shield-lock"></i><span>سطوح دسترسی</span></a>
+                }
+                @if (Can(Permissions.Audit))
+                {
+                    <a class="a-link @Act("Audit")" asp-area="Admin" asp-controller="Audit" asp-action="Index"><i class="bi bi-clock-history"></i><span>گزارش فعالیت‌ها</span></a>
+                }
+            }
+            <div class="a-menu-title">حساب</div>
+            <a class="a-link @Act("Account")" asp-area="Admin" asp-controller="Account" asp-action="Profile"><i class="bi bi-person-gear"></i><span>پروفایل و رمز عبور</span></a>
+            <a class="a-link" href="/" target="_blank"><i class="bi bi-globe2"></i><span>مشاهده سایت</span></a>
+        </nav>
+        <div class="a-user">
+            <span class="a-avatar">@(name.Length > 0 ? name[..1] : "?")</span>
+            <div class="flex-grow-1 min-w-0">
+                <div class="name text-truncate">@name</div>
+                <div class="role text-truncate">@roles</div>
+            </div>
+            <form method="post" asp-area="Admin" asp-controller="Account" asp-action="Logout">
+                <button class="btn btn-sm text-danger" title="خروج" aria-label="خروج"><i class="bi bi-box-arrow-left fs-5"></i></button>
+            </form>
+        </div>
+    </aside>
+    <div class="a-backdrop" data-side-close></div>
+
+    <div class="a-main">
+        <header class="a-top">
+            <button class="a-icon-btn d-lg-none" type="button" data-side-open aria-label="منو"><i class="bi bi-list fs-5"></i></button>
+            <button class="a-icon-btn d-none d-lg-inline-grid" type="button" data-side-collapse aria-label="جمع کردن منو"><i class="bi bi-layout-sidebar-inset-reverse"></i></button>
+            <h1 class="text-truncate">@ViewData["Title"]</h1>
+            <div class="me-auto d-flex gap-2 align-items-center">
+                <span class="text-muted small d-none d-md-inline">@Fmt.Jalali(DateTime.UtcNow)</span>
+                <button class="a-icon-btn theme-toggle" type="button" title="تغییر تم" aria-label="تغییر تم"><i class="bi bi-moon-stars"></i><i class="bi bi-sun"></i></button>
+            </div>
+        </header>
+        <main class="a-content">
+            @if (TempData["Flash.Success"] is string ok)
+            {
+                <div class="alert alert-success alert-dismissible a-flash d-flex align-items-center gap-2"><i class="bi bi-check-circle-fill fs-5"></i>@ok<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            }
+            @if (TempData["Flash.Error"] is string err)
+            {
+                <div class="alert alert-danger alert-dismissible a-flash d-flex align-items-center gap-2"><i class="bi bi-exclamation-triangle-fill fs-5"></i>@err<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            }
+            @RenderBody()
+        </main>
+    </div>
+
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content p-2">
+                <div class="modal-body text-center">
+                    <div class="display-5 text-danger mb-2"><i class="bi bi-exclamation-octagon"></i></div>
+                    <p class="fw-bold mb-0" id="confirmText">آیا مطمئن هستید؟</p>
+                </div>
+                <div class="d-flex gap-2 p-3 pt-0">
+                    <button type="button" class="btn btn-soft flex-fill" data-bs-dismiss="modal">انصراف</button>
+                    <button type="button" class="btn btn-danger flex-fill" id="confirmYes">بله، انجام شود</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/bootstrap/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+</body>
+</html>

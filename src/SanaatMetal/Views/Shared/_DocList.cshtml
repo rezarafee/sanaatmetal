@@ -1,0 +1,32 @@
+@model List<ProductDocument>
+@if (Model.Count == 0)
+{
+    <div class="sm-empty py-4"><i class="bi bi-file-earmark d-block mb-2"></i>@L["NoDocuments"]</div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var d in Model)
+        {
+            <div class="col-md-6">
+                <div class="sm-doc">
+                    <div class="sm-doc-icon @(d.Type == DocumentType.Certificate ? "cert" : "")"><i class="bi @(d.Type == DocumentType.Certificate ? "bi-award" : "bi-file-earmark-pdf")"></i></div>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-bold text-truncate">@L.Pick(d.TitleFa, d.TitleEn)</div>
+                        <div class="small text-muted d-flex flex-wrap gap-3">
+                            <span>@L["Type_" + d.Type]</span>
+                            @if (!string.IsNullOrEmpty(d.Version)) { <span>@L["Version"]: <span dir="ltr">@d.Version</span></span> }
+                            @if (!string.IsNullOrEmpty(d.Issuer)) { <span>@L["Issuer"]: @d.Issuer</span> }
+                            @if (d.ExpiresAt.HasValue)
+                            {
+                                <span class="@(d.IsExpired ? "text-danger" : "")">@(d.IsExpired ? L["Expired"] : L["ValidUntil"]): @L.Date(d.ExpiresAt)</span>
+                            }
+                            <span>@Fmt.FileSize(d.FileSize)</span>
+                        </div>
+                    </div>
+                    <a class="btn btn-sm btn-sm-outline" href="@d.FilePath" target="_blank" rel="noopener" download><i class="bi bi-download ic"></i>@L["Download"]</a>
+                </div>
+            </div>
+        }
+    </div>
+}

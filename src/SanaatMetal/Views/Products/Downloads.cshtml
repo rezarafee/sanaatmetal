@@ -1,0 +1,34 @@
+@model List<ProductDocument>
+@{
+    ViewData["Title"] = L["Downloads"];
+    DocumentType? type = ViewBag.Type;
+}
+<partial name="_PageHead" model='(L["Downloads"], (string?)null)' />
+<section class="sm-section pt-5">
+    <div class="container">
+        <form method="get" class="row g-2 mb-4">
+            <div class="col-md-6"><input class="form-control" name="q" value="@ViewBag.Q" placeholder="@L["Search"]..." maxlength="100" /></div>
+            <div class="col-md-4">
+                <select class="form-select" name="type" data-autosubmit>
+                    <option value="">@L["Documents"]</option>
+                    @foreach (var t in Enum.GetValues<DocumentType>())
+                    {
+                        <option value="@t" selected="@(type == t)">@L["Type_" + t]</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2"><button class="btn btn-sm-primary w-100"><i class="bi bi-search ic"></i>@L["Search"]</button></div>
+        </form>
+        @if (Model.Count == 0)
+        {
+            <div class="sm-empty"><i class="bi bi-folder2-open d-block mb-3"></i>@L["NoDocuments"]</div>
+        }
+        @foreach (var g in Model.GroupBy(d => d.Product!))
+        {
+            <div class="mb-4 reveal">
+                <h5 class="fw-bold mb-3"><a href="/products/@g.Key.Slug" style="color:var(--sm-text)"><i class="bi bi-box-seam ic text-warning"></i>@L.Pick(g.Key.NameFa, g.Key.NameEn)</a></h5>
+                <partial name="_DocList" model="g.ToList()" />
+            </div>
+        }
+    </div>
+</section>

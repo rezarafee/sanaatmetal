@@ -1,0 +1,102 @@
+@model ProductListVm
+@{
+    var title = Model.CurrentCategory is null ? L["Products"] : L.Pick(Model.CurrentCategory.NameFa, Model.CurrentCategory.NameEn);
+    ViewData["Title"] = title;
+    string U(string? cat = "__", int? mat = -1, int page = 1)
+    {
+        var c = cat == "__" ? Model.Cat : cat;
+        var m = mat == -1 ? Model.Mat : mat;
+        var qs = new List<string>();
+        if (!string.IsNullOrEmpty(Model.Q)) qs.Add("q=" + Uri.EscapeDataString(Model.Q));
+        if (!string.IsNullOrEmpty(c)) qs.Add("cat=" + Uri.EscapeDataString(c));
+        if (m.HasValue) qs.Add("mat=" + m);
+        if (Model.Sort != "new") qs.Add("sort=" + Model.Sort);
+        if (page > 1) qs.Add("page=" + page);
+        return "/products" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
+    }
+}
+<partial name="_PageHead" model="(title, Model.CurrentCategory is null ? null : L.Pick(Model.CurrentCategory.DescriptionFa, Model.CurrentCategory.DescriptionEn))" />
+
+<section class="sm-section pt-5">
+    <div class="container">
+        <div class="row g-4">
+            <aside class="col-lg-3">
+                <div class="sm-filter">
+                    <form action="/products" method="get" class="mb-4">
+                        @if (!string.IsNullOrEmpty(Model.Cat)) { <input type="hidden" name="cat" value="@Model.Cat" /> }
+                        <div class="input-group">
+                            <input class="form-control" name="q" value="@Model.Q" placeholder="@L["SearchPlaceholder"]" maxlength="100" />
+                            <button class="btn btn-sm-primary" aria-label="@L["Search"]"><i class="bi bi-search"></i></button>
+                        </div>
+                    </form>
+                    <h6><i class="bi bi-grid ic"></i>@L["Categories"]</h6>
+                    <div class="list-group mb-4">
+                        <a class="list-group-item @(Model.CurrentCategory is null ? "active" : "")" href="@U(cat: null)">@L["AllCategories"]</a>
+                        @foreach (var c in Model.Categories.Where(c => c.ParentId == null))
+                        {
+                            <a class="list-group-item @(Model.CurrentCategory?.Id == c.Id ? "active" : "")" href="@U(cat: c.Slug)">
+                                <span><i class="bi @(c.Icon ?? "bi-box") ic"></i>@L.Pick(c.NameFa, c.NameEn)</span>
+                                <span class="badge rounded-pill text-bg-light">@L.Num(Model.CategoryCounts.GetValueOrDefault(c.Id))</span>
+                            </a>
+                            @foreach (var sub in Model.Categories.Where(x => x.ParentId == c.Id))
+                            {
+                                <a class="list-group-item ps-4 pe-4 small @(Model.CurrentCategory?.Id == sub.Id ? "active" : "")" href="@U(cat: sub.Slug)">— @L.Pick(sub.NameFa, sub.NameEn)</a>
+                            }
+                        }
+                    </div>
+                    @if (Model.Materials.Count > 0)
+                    {
+                        <h6><i class="bi bi-layers ic"></i>@L["Material"]</h6>
+                        <div class="list-group">
+                            <a class="list-group-item @(Model.Mat is null ? "active" : "")" href="@U(mat: null)">@L["AllMaterials"]</a>
+                            @foreach (var m in Model.Materials)
+                            {
+                                <a class="list-group-item @(Model.Mat == m.Id ? "active" : "")" href="@U(mat: m.Id)">@L.Pick(m.NameFa, m.NameEn)</a>
+                            }
+                        </div>
+                    }
+                </div>
+            </aside>
+            <div class="col-lg-9">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                    <div class="text-muted">@L.Num(Model.Total) @L["Product"]</div>
+                    <form method="get" action="/products" class="d-flex align-items-center gap-2">
+                        @if (!string.IsNullOrEmpty(Model.Q)) { <input type="hidden" name="q" value="@Model.Q" /> }
+                        @if (!string.IsNullOrEmpty(Model.Cat)) { <input type="hidden" name="cat" value="@Model.Cat" /> }
+                        @if (Model.Mat.HasValue) { <input type="hidden" name="mat" value="@Model.Mat" /> }
+                        <label class="small text-muted text-nowrap" for="sort">@L["Sort"]</label>
+                        <select id="sort" name="sort" class="form-select form-select-sm" data-autosubmit>
+                            <option value="new" selected="@(Model.Sort == "new")">@L["SortNewest"]</option>
+                            <option value="name" selected="@(Model.Sort == "name")">@L["SortName"]</option>
+                            <option value="price" selected="@(Model.Sort == "price")">@L["SortPriceAsc"]</option>
+                            <option value="price_desc" selected="@(Model.Sort == "price_desc")">@L["SortPriceDesc"]</option>
+                        </select>
+                    </form>
+                </div>
+                @if (Model.Items.Count == 0)
+                {
+                    <div class="sm-empty"><i class="bi bi-search d-block mb-3"></i>@L["NoProducts"]</div>
+                }
+                <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-xl-3">
+                    @foreach (var p in Model.Items)
+                    {
+                        <div class="col reveal"><partial name="_ProductCard" model="p" /></div>
+                    }
+                </div>
+                @if (Model.TotalPages > 1)
+                {
+                    <nav class="mt-5" aria-label="@L["Page"]">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @(Model.Page == 1 ? "disabled" : "")"><a class="page-link" href="@U(page: Model.Page - 1)">@L["Prev"]</a></li>
+                            @for (var i = Math.Max(1, Model.Page - 3); i <= Math.Min(Model.TotalPages, Model.Page + 3); i++)
+                            {
+                                <li class="page-item @(i == Model.Page ? "active" : "")"><a class="page-link" href="@U(page: i)">@L.Num(i)</a></li>
+                            }
+                            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")"><a class="page-link" href="@U(page: Model.Page + 1)">@L["Next"]</a></li>
+                        </ul>
+                    </nav>
+                }
+            </div>
+        </div>
+    </div>
+</section>

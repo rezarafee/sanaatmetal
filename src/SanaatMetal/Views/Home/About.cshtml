@@ -1,0 +1,38 @@
+@model SiteSettings
+@{
+    ViewData["Title"] = L["About"];
+    List<Client> clients = ViewBag.Clients;
+}
+<partial name="_PageHead" model='(L["About"], L.Pick(Model.SloganFa, Model.SloganEn))' />
+<section class="sm-section">
+    <div class="container">
+        <div class="row g-5 align-items-center">
+            <div class="col-lg-6 reveal">
+                <h2 class="sm-title mb-4">@L.Pick(Model.CompanyNameFa, Model.CompanyNameEn)</h2>
+                @foreach (var para in L.Pick(Model.AboutFa, Model.AboutEn).Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    <p class="text-muted" style="line-height:2.2">@para</p>
+                }
+                <a href="/products" class="btn btn-sm-primary mt-3">@L["ViewProducts"]</a>
+            </div>
+            <div class="col-lg-6 reveal">
+                <div class="row g-3">
+                    @foreach (var (icon, t, d) in new[] { ("bi-patch-check", "Why1", "Why1d"), ("bi-rulers", "Why2", "Why2d"), ("bi-truck", "Why3", "Why3d"), ("bi-headset", "Why4", "Why4d") })
+                    {
+                        <div class="col-sm-6"><div class="sm-feature"><div class="sm-feature-icon"><i class="bi @icon"></i></div><h6 class="fw-bold">@L[t]</h6><p class="small text-muted mb-0">@L[d]</p></div></div>
+                    }
+                </div>
+            </div>
+        </div>
+        @if (clients.Count > 0)
+        {
+            <div class="sm-section-head mt-5 pt-5"><h2>@L["OurClients"]</h2><div class="line"></div></div>
+            <div class="row g-3 row-cols-2 row-cols-md-4 row-cols-lg-6">
+                @foreach (var c in clients)
+                {
+                    <div class="col reveal"><div class="sm-client">@if (!string.IsNullOrEmpty(c.LogoPath)) { <img src="@c.LogoPath" alt="" loading="lazy" /> }<span>@L.Pick(c.NameFa, c.NameEn)</span></div></div>
+                }
+            </div>
+        }
+    </div>
+</section>

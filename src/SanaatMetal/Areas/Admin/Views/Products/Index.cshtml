@@ -1,0 +1,75 @@
+@model List<SanaatMetal.Areas.Admin.Controllers.ProductsController.ProductRow>
+@{
+    ViewData["Title"] = "محصولات";
+    var cats = (List<Category>)ViewBag.Categories;
+    int page = ViewBag.Page, pages = ViewBag.Pages;
+}
+<div class="a-card">
+    <div class="a-card-head">
+        <h5><i class="bi bi-box-seam ic text-primary"></i>محصولات <span class="text-muted small">(@N((int)ViewBag.Total))</span></h5>
+        @if (Can(Permissions.CatalogManage)) { <a class="btn btn-a btn-sm" asp-action="Create"><i class="bi bi-plus-lg ic"></i>محصول جدید</a> }
+    </div>
+    <form class="a-card-body border-bottom row g-2" method="get">
+        <div class="col-md-5"><input class="form-control" name="q" value="@ViewBag.Q" placeholder="جستجو نام یا کد کالا..." /></div>
+        <div class="col-md-3">
+            <select class="form-select" name="cat" data-autosubmit>
+                <option value="">همه دسته‌ها</option>
+                @foreach (var c in cats) { <option value="@c.Id" selected="@(ViewBag.Cat == c.Id)">@c.NameFa</option> }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" name="status" data-autosubmit>
+                <option value="">همه</option>
+                <option value="active" selected="@(ViewBag.Status == "active")">فعال</option>
+                <option value="inactive" selected="@(ViewBag.Status == "inactive")">غیرفعال</option>
+                <option value="featured" selected="@(ViewBag.Status == "featured")">ویژه</option>
+            </select>
+        </div>
+        <div class="col-md-2"><button class="btn btn-soft w-100"><i class="bi bi-search ic"></i>جستجو</button></div>
+    </form>
+    <div class="table-responsive">
+        <table class="table a-table table-hover">
+            <thead><tr><th></th><th>نام محصول</th><th>کد</th><th>دسته</th><th>متریال</th><th>سایزها</th><th>مستندات</th><th>وضعیت</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in Model)
+                {
+                    var p = r.Product;
+                    <tr>
+                        <td><img class="a-thumb" src="@(r.Image ?? "/img/placeholder.svg")" alt="" /></td>
+                        <td><div class="fw-bold">@p.NameFa</div><div class="small text-muted ltr text-end">@p.NameEn</div></td>
+                        <td class="ltr">@p.Code</td>
+                        <td>@p.Category?.NameFa</td>
+                        <td>@p.Material?.NameFa</td>
+                        <td>@N(r.Variants)</td>
+                        <td>@N(r.Docs)</td>
+                        <td class="text-nowrap">
+                            @if (p.IsActive) { <span class="pill pill-green">فعال</span> } else { <span class="pill pill-gray">غیرفعال</span> }
+                            @if (p.IsFeatured) { <span class="pill pill-orange"><i class="bi bi-star-fill"></i></span> }
+                            @if (p.CallForPrice) { <span class="pill pill-blue" title="تماس بگیرید"><i class="bi bi-telephone"></i></span> }
+                        </td>
+                        <td>
+                            <div class="a-actions">
+                                <a class="btn btn-soft" href="/products/@p.Slug" target="_blank" title="مشاهده در سایت"><i class="bi bi-eye"></i></a>
+                                @if (Can(Permissions.CatalogManage))
+                                {
+                                    <a class="btn btn-soft-primary" asp-action="Edit" asp-route-id="@p.Id" title="ویرایش"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" asp-action="Delete" asp-route-id="@p.Id" data-confirm="محصول «@p.NameFa» با همه سایزها، عکس‌ها و مستنداتش حذف شود؟"><button class="btn btn-soft-danger" title="حذف"><i class="bi bi-trash3"></i></button></form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (Model.Count == 0) { <div class="a-empty"><i class="bi bi-box"></i>محصولی یافت نشد.</div> }
+    </div>
+    @if (pages > 1)
+    {
+        <nav class="p-3"><ul class="pagination justify-content-center mb-0">
+            @for (var i = 1; i <= pages; i++)
+            {
+                <li class="page-item @(i == page ? "active" : "")"><a class="page-link" asp-route-page="@i" asp-route-q="@ViewBag.Q" asp-route-cat="@ViewBag.Cat" asp-route-status="@ViewBag.Status">@N(i)</a></li>
+            }
+        </ul></nav>
+    }
+</div>

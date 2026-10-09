@@ -1,0 +1,32 @@
+@model SanaatMetal.Areas.Admin.Controllers.ChangePasswordVm
+@{
+    ViewData["Title"] = "پروفایل و رمز عبور";
+    var u = ViewData["User"] as AppUser;
+}
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="a-card a-card-body text-center">
+            <div class="a-avatar mx-auto mb-3" style="width:80px;height:80px;font-size:2rem;border-radius:22px">@(u?.FullName?.Length > 0 ? u.FullName[..1] : "?")</div>
+            <h5 class="fw-bold">@u?.FullName</h5>
+            <div class="text-muted ltr text-center">@u?.UserName</div>
+            <div class="text-muted ltr text-center small">@u?.Email</div>
+            <hr />
+            <div class="small text-muted">آخرین ورود: @D(u?.LastLoginAt, true)</div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="a-card">
+            <div class="a-card-head"><h5><i class="bi bi-key ic"></i>تغییر رمز عبور</h5></div>
+            <form method="post" class="a-card-body">
+                <div asp-validation-summary="All" class="text-danger small"></div>
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="form-label">رمز فعلی</label><input type="password" class="form-control ltr" asp-for="CurrentPassword" autocomplete="current-password" /></div>
+                    <div class="col-md-4"><label class="form-label">رمز جدید</label><input type="password" class="form-control ltr" asp-for="NewPassword" autocomplete="new-password" /></div>
+                    <div class="col-md-4"><label class="form-label">تکرار رمز جدید</label><input type="password" class="form-control ltr" asp-for="ConfirmPassword" autocomplete="new-password" /></div>
+                </div>
+                <p class="small text-muted mt-3 mb-3">رمز باید حداقل ۱۰ کاراکتر و شامل حرف بزرگ، حرف کوچک، عدد و نماد باشد.</p>
+                <button class="btn btn-a"><i class="bi bi-check2 ic"></i>ذخیره</button>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,44 @@
+@model ProductCardVm
+<div class="sm-card">
+    <a href="/products/@Model.Slug" class="sm-card-img">
+        <img src="@Model.Image" alt="@Model.Name" loading="lazy" />
+        @if (!Model.CallForPrice && Model.MaxDiscount > 0)
+        {
+            <span class="sm-badge-off">@L.Num(Model.MaxDiscount)٪ @L["Discount"]</span>
+        }
+        @if (!string.IsNullOrEmpty(Model.Category))
+        {
+            <span class="sm-badge-cat">@Model.Category</span>
+        }
+    </a>
+    <div class="sm-card-body">
+        <a href="/products/@Model.Slug" class="sm-card-title">@Model.Name</a>
+        <div class="sm-card-meta">
+            @if (!string.IsNullOrEmpty(Model.Material)) { <span><i class="bi bi-layers ic"></i>@Model.Material</span> }
+            @if (!string.IsNullOrEmpty(Model.Standard)) { <span dir="ltr"><i class="bi bi-patch-check ic"></i>@Model.Standard</span> }
+            @if (Model.VariantCount > 1) { <span><i class="bi bi-rulers ic"></i>@L.Num(Model.VariantCount) @L["Size"]</span> }
+        </div>
+        <div class="sm-card-foot">
+            <div>
+                @if (Model.CallForPrice)
+                {
+                    <span class="sm-call"><i class="bi bi-telephone-outbound"></i>@L["CallForPrice"]</span>
+                }
+                else
+                {
+                    @if (Model.VariantCount > 1) { <small class="text-muted d-block">@L["From"]</small> }
+                    @if (Model.MinPrice != Model.MinFinalPrice) { <span class="sm-price-old d-block">@L.Num(Model.MinPrice)</span> }
+                    <span class="sm-price">@L.Num(Model.MinFinalPrice) <small>@L["Currency"]</small></span>
+                }
+            </div>
+            @if (Model.SingleVariantId.HasValue)
+            {
+                <button type="button" class="btn btn-sm-primary btn-icon" data-add-cart="@Model.SingleVariantId" title="@L["AddToCart"]" aria-label="@L["AddToCart"]"><i class="bi bi-bag-plus"></i></button>
+            }
+            else
+            {
+                <a href="/products/@Model.Slug" class="btn btn-sm-outline btn-icon" title="@L["Details"]" aria-label="@L["Details"]"><i class="bi @(L.IsFa ? "bi-arrow-left" : "bi-arrow-right")"></i></a>
+            }
+        </div>
+    </div>
+</div>

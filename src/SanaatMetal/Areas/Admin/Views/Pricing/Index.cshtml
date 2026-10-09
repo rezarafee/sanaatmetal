@@ -1,0 +1,76 @@
+@model List<SanaatMetal.Areas.Admin.Controllers.PriceRow>
+@{
+    ViewData["Title"] = "قیمت‌گذاری";
+    var cats = (List<Category>)ViewBag.Categories;
+    int page = ViewBag.Page, pages = ViewBag.Pages;
+}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="a-card">
+            <div class="a-card-head">
+                <h5><i class="bi bi-tags ic text-success"></i>جدول قیمت (قیمت جاری هر سایز)</h5>
+                @if (Can(Permissions.PricingManage))
+                {
+                    <button class="btn btn-a-accent btn-sm" data-bs-toggle="collapse" data-bs-target="#bulk"><i class="bi bi-percent ic"></i>تغییر گروهی قیمت</button>
+                }
+            </div>
+            @if (Can(Permissions.PricingManage))
+            {
+                <div class="collapse" id="bulk">
+                    <form method="post" asp-action="Bulk" class="a-card-body border-bottom row g-2 align-items-end" data-confirm="قیمت‌ها به‌صورت گروهی تغییر کند؟ (قیمت‌های قبلی در تاریخچه می‌ماند)">
+                        <div class="col-md-3"><label class="form-label">دسته</label><select class="form-select" name="categoryId"><option value="">همه محصولات</option>@foreach (var c in cats) { <option value="@c.Id">@c.NameFa</option> }</select></div>
+                        <div class="col-md-2"><label class="form-label">درصد (+ افزایش / - کاهش)</label><input class="form-control ltr" name="percent" required placeholder="10" /></div>
+                        <div class="col-md-3"><label class="form-label">توضیح</label><input class="form-control" name="note" placeholder="افزایش قیمت مهر ماه" /></div>
+                        <div class="col-md-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="applyPurchase" value="true" id="ap" /><label class="form-check-label small" for="ap">قیمت خرید هم تغییر کند</label></div></div>
+                        <div class="col-md-2"><button class="btn btn-a w-100">اعمال</button></div>
+                    </form>
+                </div>
+            }
+            <form class="a-card-body border-bottom row g-2" method="get">
+                <div class="col-md-6"><input class="form-control" name="q" value="@ViewBag.Q" placeholder="جستجو محصول، کد، سایز..." /></div>
+                <div class="col-md-4"><select class="form-select" name="cat" data-autosubmit><option value="">همه دسته‌ها</option>@foreach (var c in cats) { <option value="@c.Id" selected="@(ViewBag.Cat == c.Id)">@c.NameFa</option> }</select></div>
+                <div class="col-md-2"><button class="btn btn-soft w-100"><i class="bi bi-search ic"></i>جستجو</button></div>
+            </form>
+            <div class="table-responsive">
+                <table class="table a-table table-hover">
+                    <thead><tr><th>محصول</th><th>سایز</th><th>قیمت خرید</th><th>قیمت فروش</th><th>تخفیف</th><th>نقدی</th><th>چکی</th><th>مدت چک</th><th>سود</th><th>آخرین تغییر</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            var c = r.Current;
+                            var call = r.ProductCallForPrice || r.Variant.CallForPrice;
+                            var margin = c is null || c.PurchasePrice == 0 ? (decimal?)null : Math.Round((c.SalePrice * (100 - c.DiscountPercent) / 100 - c.PurchasePrice) * 100 / c.PurchasePrice, 1);
+                            <tr>
+                                <td><div class="fw-bold">@r.ProductName</div><div class="small text-muted">@r.Category</div></td>
+                                <td class="ltr">@r.Variant.Title</td>
+                                @if (c is null)
+                                {
+                                    <td colspan="8" class="text-muted">@(call ? "تماس بگیرید" : "قیمت ثبت نشده")</td>
+                                }
+                                else
+                                {
+                                    <td class="num">@N(c.PurchasePrice)</td>
+                                    <td class="num fw-bold">@N(c.SalePrice) @if (call) { <span class="pill pill-blue">تماس</span> }</td>
+                                    <td>@(c.DiscountPercent > 0 ? N(c.DiscountPercent) + "٪" : "-")</td>
+                                    <td class="num">@N(c.CashPrice)</td>
+                                    <td class="num">@N(c.ChequePrice)</td>
+                                    <td>@(c.ChequeTermDays > 0 ? N(c.ChequeTermDays) + " روز" : "")</td>
+                                    <td>@if (margin.HasValue) { <span class="pill @(margin > 0 ? "pill-green" : "pill-red")">@N(margin)٪</span> }</td>
+                                    <td class="small text-muted">@D(c.CreatedAt)<br />@c.CreatedByName</td>
+                                }
+                                <td><div class="a-actions"><a class="btn btn-soft-success" asp-action="Edit" asp-route-id="@r.Variant.Id" title="قیمت‌گذاری و تاریخچه"><i class="bi bi-pencil-square"></i></a></div></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (Model.Count == 0) { <div class="a-empty"><i class="bi bi-tags"></i>سایزی یافت نشد. ابتدا برای محصولات سایز تعریف کنید.</div> }
+            </div>
+            @if (pages > 1)
+            {
+                <nav class="p-3"><ul class="pagination justify-content-center mb-0">
+                    @for (var i = 1; i <= pages; i++) { <li class="page-item @(i == page ? "active" : "")"><a class="page-link" asp-route-page="@i" asp-route-q="@ViewBag.Q" asp-route-cat="@ViewBag.Cat">@N(i)</a></li> }
+                </ul></nav>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,15 @@
+@model List<Category>
+@if (ViewData["Plain"] is true)
+{
+    foreach (var c in Model)
+    {
+        <li><a href="/products?cat=@c.Slug">@L.Pick(c.NameFa, c.NameEn)</a></li>
+    }
+}
+else
+{
+    foreach (var c in Model)
+    {
+        <li><a class="dropdown-item rounded-3" href="/products?cat=@c.Slug"><i class="bi @(c.Icon ?? "bi-box") ic"></i>@L.Pick(c.NameFa, c.NameEn)</a></li>
+    }
+}

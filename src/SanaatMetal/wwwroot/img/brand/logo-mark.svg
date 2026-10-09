@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Sanaat Metal"><title>Sanaat Metal</title><g transform="translate(0 0) scale(1.0)">
+  <defs>
+    <linearGradient id="abg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1769aa"/><stop offset="1" stop-color="#0a2e52"/></linearGradient>
+    <linearGradient id="aor" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb15c"/><stop offset="1" stop-color="#f07c22"/></linearGradient>
+    <linearGradient id="ast" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d6e2ef"/></linearGradient>
+    <mask id="am"><rect width="64" height="64" fill="#fff"/><g fill="#000"><circle cx="48.81" cy="38.96" r="2.25"/><circle cx="38.96" cy="48.81" r="2.25"/><circle cx="25.04" cy="48.81" r="2.25"/><circle cx="15.19" cy="38.96" r="2.25"/><circle cx="15.19" cy="25.04" r="2.25"/><circle cx="25.04" cy="15.19" r="2.25"/><circle cx="38.96" cy="15.19" r="2.25"/><circle cx="48.81" cy="25.04" r="2.25"/></g></mask>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#abg)"/>
+  <path d="M0 15A15 15 0 0 1 15 0H49A15 15 0 0 1 64 15V22C44 14 20 14 0 26Z" fill="#fff" opacity=".07"/>
+  <circle cx="32" cy="32" r="23" fill="url(#ast)" mask="url(#am)"/>
+  <circle cx="32" cy="32" r="23" fill="none" stroke="#0a2e52" stroke-opacity=".12" stroke-width="1"/>
+  <circle cx="32" cy="32" r="14.6" fill="none" stroke="#0a2e52" stroke-opacity=".16" stroke-width="1.2"/>
+  <circle cx="32" cy="32" r="12" fill="url(#aor)"/>
+  <circle cx="32" cy="32" r="9" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".8"/>
+  <circle cx="32" cy="32" r="5.8" fill="#0a2e52"/>
+  <circle cx="32" cy="32" r="12" fill="none" stroke="#0a2e52" stroke-opacity=".18" stroke-width="1"/>
+</g></svg>

@@ -1,0 +1,197 @@
+@model HomeVm
+@{
+    SiteSettings s = ViewBag.Settings;
+    ViewData["Title"] = L.Pick(s.HeroTitleFa, s.HeroTitleEn);
+    var heroTitle = L.Pick(s.HeroTitleFa, s.HeroTitleEn);
+    var heroSub = L.Pick(s.HeroSubtitleFa, s.HeroSubtitleEn);
+    var arrow = L.IsFa ? "bi-arrow-left" : "bi-arrow-right";
+}
+
+<!-- ===== Hero slider ===== -->
+<section class="sm-hero">
+    <div class="swiper">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide">
+                <div class="sm-hero-bg" style="background-image:url('/img/hero-bg.svg')"></div>
+                <div class="sm-hero-overlay"></div>
+                <div class="sm-hero-pattern"></div>
+                <div class="container sm-hero-content">
+                    <div class="row w-100 align-items-center g-4">
+                        <div class="col-lg-7">
+                            <span class="sm-hero-chip anim-up"><i class="bi bi-shield-check"></i>@L["Why1"]</span>
+                            <h1 class="my-3 anim-up d1">@heroTitle</h1>
+                            <p class="mb-4 anim-up d2">@heroSub</p>
+                            <div class="d-flex flex-wrap gap-2 anim-up d3">
+                                <a href="/products" class="btn btn-sm-accent btn-lg px-4">@L["ViewProducts"] <i class="bi @arrow"></i></a>
+                                <a href="#contact" class="btn btn-sm-ghost btn-lg px-4"><i class="bi bi-chat-dots ic"></i>@L["RequestQuote"]</a>
+                            </div>
+                        </div>
+                        <div class="col-lg-5 d-none d-lg-block sm-hero-product anim-up d2">
+                            <img src="/img/demo/valve.svg" alt="" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @foreach (var slide in Model.Slides)
+            {
+                <div class="swiper-slide">
+                    <div class="sm-hero-bg" style="background-image:url('/img/hero-bg.svg')"></div>
+                    <div class="sm-hero-overlay"></div>
+                    <div class="sm-hero-pattern"></div>
+                    <div class="container sm-hero-content">
+                        <div class="row w-100 align-items-center g-4">
+                            <div class="col-lg-6 order-2 order-lg-1">
+                                <span class="sm-hero-chip anim-up"><i class="bi bi-star-fill"></i>@L["FeaturedProducts"]</span>
+                                <h1 class="my-3 anim-up d1">@slide.Title</h1>
+                                @if (!string.IsNullOrEmpty(slide.Subtitle)) { <p class="mb-4 anim-up d2">@slide.Subtitle</p> }
+                                <div class="d-flex flex-wrap gap-2 anim-up d3">
+                                    <a href="@slide.Url" class="btn btn-sm-accent btn-lg px-4">@L["Details"] <i class="bi @arrow"></i></a>
+                                    <a href="/products" class="btn btn-sm-ghost btn-lg px-4">@L["AllProducts"]</a>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 order-1 order-lg-2 sm-hero-product text-center anim-up d1">
+                                <img src="@slide.Image" alt="@slide.Title" style="max-height:340px" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="swiper-pagination"></div>
+        <div class="swiper-button-prev d-none d-md-flex"></div>
+        <div class="swiper-button-next d-none d-md-flex"></div>
+    </div>
+    <div class="sm-hero-wave">
+        <svg viewBox="0 0 1440 90" preserveAspectRatio="none" width="100%" height="70"><path d="M0,64 C240,10 480,96 720,60 C960,24 1200,80 1440,40 L1440,90 L0,90 Z"></path></svg>
+    </div>
+</section>
+
+<!-- ===== Stats ===== -->
+<section class="sm-stats">
+    <div class="container">
+        <div class="row g-3 row-cols-2 row-cols-lg-4">
+            <div class="col reveal"><div class="sm-stat"><div class="sm-stat-icon"><i class="bi bi-box-seam"></i></div><div><div class="sm-stat-num" data-count="@Model.ProductCount" data-suffix="+">0</div><small class="text-muted">@L["StatProducts"]</small></div></div></div>
+            <div class="col reveal"><div class="sm-stat"><div class="sm-stat-icon"><i class="bi bi-buildings"></i></div><div><div class="sm-stat-num" data-count="@Model.Clients.Count" data-suffix="+">0</div><small class="text-muted">@L["StatClients"]</small></div></div></div>
+            <div class="col reveal"><div class="sm-stat"><div class="sm-stat-icon"><i class="bi bi-file-earmark-check"></i></div><div><div class="sm-stat-num" data-count="@Model.DocumentCount">0</div><small class="text-muted">@L["StatCerts"]</small></div></div></div>
+            <div class="col reveal"><div class="sm-stat"><div class="sm-stat-icon"><i class="bi bi-award"></i></div><div><div class="sm-stat-num" data-count="15" data-suffix="+">0</div><small class="text-muted">@L["StatYears"]</small></div></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== Categories ===== -->
+@if (Model.Categories.Count > 0)
+{
+    <section class="sm-section">
+        <div class="container">
+            <div class="sm-section-head reveal">
+                <div class="eyebrow">@L["Categories"]</div>
+                <h2>@L["Products"]</h2>
+                <div class="line"></div>
+            </div>
+            <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+                @foreach (var c in Model.Categories)
+                {
+                    <div class="col reveal">
+                        <a class="sm-cat" href="/products?cat=@c.Slug">
+                            <span class="arrow"><i class="bi @arrow"></i></span>
+                            <div class="sm-cat-img"><img src="@(c.ImagePath ?? "/img/placeholder.svg")" alt="@L.Pick(c.NameFa, c.NameEn)" loading="lazy" /></div>
+                            <h3>@L.Pick(c.NameFa, c.NameEn)</h3>
+                            <p class="text-muted small mb-0">@L.Pick(c.DescriptionFa, c.DescriptionEn)</p>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- ===== Featured products ===== -->
+@if (Model.Featured.Count > 0)
+{
+    <section class="sm-section sm-section-alt sm-featured">
+        <div class="container">
+            <div class="d-flex flex-wrap align-items-end justify-content-between mb-4 gap-3 reveal">
+                <div>
+                    <div class="text-warning fw-bold small">@L["Products"]</div>
+                    <h2 class="sm-title fs-1 mb-0">@L["FeaturedProducts"]</h2>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm-outline btn-icon f-prev" type="button" aria-label="@L["Prev"]"><i class="bi @(L.IsFa ? "bi-chevron-right" : "bi-chevron-left")"></i></button>
+                    <button class="btn btn-sm-outline btn-icon f-next" type="button" aria-label="@L["Next"]"><i class="bi @(L.IsFa ? "bi-chevron-left" : "bi-chevron-right")"></i></button>
+                    <a href="/products" class="btn btn-sm-primary">@L["AllProducts"]</a>
+                </div>
+            </div>
+            <div class="swiper pb-2 reveal">
+                <div class="swiper-wrapper">
+                    @foreach (var p in Model.Featured)
+                    {
+                        <div class="swiper-slide h-auto"><partial name="_ProductCard" model="p" /></div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+<!-- ===== Why us ===== -->
+<section class="sm-section">
+    <div class="container">
+        <div class="sm-section-head reveal">
+            <div class="eyebrow">@L["About"]</div>
+            <h2>@L["WhyUs"]</h2>
+            <div class="line"></div>
+        </div>
+        <div class="row g-4">
+            @foreach (var (icon, t, d) in new[] { ("bi-patch-check", "Why1", "Why1d"), ("bi-rulers", "Why2", "Why2d"), ("bi-truck", "Why3", "Why3d"), ("bi-headset", "Why4", "Why4d") })
+            {
+                <div class="col-md-6 col-lg-3 reveal">
+                    <div class="sm-feature">
+                        <div class="sm-feature-icon"><i class="bi @icon"></i></div>
+                        <h5 class="fw-bold">@L[t]</h5>
+                        <p class="text-muted small mb-0" style="line-height:2">@L[d]</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ===== Clients slider ===== -->
+@if (Model.Clients.Count > 0)
+{
+    <section class="sm-section sm-section-alt sm-clients">
+        <div class="container">
+            <div class="sm-section-head reveal">
+                <div class="eyebrow">@L["OurClients"]</div>
+                <h2>@L["OurClientsSub"]</h2>
+                <div class="line"></div>
+            </div>
+            <div class="swiper" dir="@L.Dir">
+                <div class="swiper-wrapper">
+                    @foreach (var c in Model.Clients.Count < 7 ? Model.Clients.Concat(Model.Clients) : Model.Clients)
+                    {
+                        <div class="swiper-slide">
+                            @{ var name = L.Pick(c.NameFa, c.NameEn); }
+                            @if (!string.IsNullOrEmpty(c.Website))
+                            {
+                                <a class="sm-client" href="@c.Website" target="_blank" rel="noopener nofollow" title="@name">
+                                    @if (!string.IsNullOrEmpty(c.LogoPath)) { <img src="@c.LogoPath" alt="@name" loading="lazy" /> }
+                                    <span>@name</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <div class="sm-client" title="@name">
+                                    @if (!string.IsNullOrEmpty(c.LogoPath)) { <img src="@c.LogoPath" alt="@name" loading="lazy" /> }
+                                    <span>@name</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+<partial name="_ContactSection" model="s" />

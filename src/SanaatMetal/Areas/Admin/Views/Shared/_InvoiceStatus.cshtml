@@ -1,0 +1,5 @@
+@model InvoiceStatus
+@{
+    var cls = Model switch { InvoiceStatus.Draft => "pill-gray", InvoiceStatus.Issued => "pill-blue", InvoiceStatus.Paid => "pill-green", _ => "pill-red" };
+}
+<span class="pill @cls">@Model.DisplayName()</span>

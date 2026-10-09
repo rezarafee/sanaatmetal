@@ -1,0 +1,17 @@
+@model (string Title, string? Sub)
+<section class="sm-page-head">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small mb-2">
+                <li class="breadcrumb-item"><a href="/">@L["Home"]</a></li>
+                @if (ViewData["Crumb"] is (string cTitle, string cUrl))
+                {
+                    <li class="breadcrumb-item"><a href="@cUrl">@cTitle</a></li>
+                }
+                <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
+            </ol>
+        </nav>
+        <h1 class="mb-1">@Model.Title</h1>
+        @if (!string.IsNullOrEmpty(Model.Sub)) { <p class="mb-0 opacity-75">@Model.Sub</p> }
+    </div>
+</section>

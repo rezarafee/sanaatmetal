@@ -1,0 +1,14 @@
+@model string
+@{ ViewData["Title"] = L["OrderSuccess"]; }
+<section class="sm-section" id="order-success">
+    <div class="container">
+        <div class="sm-cart-box p-5 text-center mx-auto reveal" style="max-width:620px">
+            <div class="sm-feature-icon mb-4" style="background:linear-gradient(135deg,#22c55e,#15803d)"><i class="bi bi-check-lg"></i></div>
+            <h2 class="sm-title">@L["OrderSuccess"]</h2>
+            <p class="text-muted mt-3">@L["OrderSuccessText"]</p>
+            <div class="display-6 fw-black my-3" dir="ltr" style="color:var(--sm-primary)">@(L.IsFa ? Fmt.FaDigits(Model) : Model)</div>
+            <p class="text-muted">@L["OrderSuccessText2"]</p>
+            <a href="/products" class="btn btn-sm-primary mt-3">@L["ContinueShopping"]</a>
+        </div>
+    </div>
+</section>

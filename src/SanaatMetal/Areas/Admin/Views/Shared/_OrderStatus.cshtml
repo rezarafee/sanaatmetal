@@ -1,0 +1,5 @@
+@model OrderStatus
+@{
+    var cls = Model switch { OrderStatus.New => "pill-orange", OrderStatus.Contacted => "pill-blue", OrderStatus.Invoiced => "pill-green", _ => "pill-gray" };
+}
+<span class="pill @cls">@Model.DisplayName()</span>

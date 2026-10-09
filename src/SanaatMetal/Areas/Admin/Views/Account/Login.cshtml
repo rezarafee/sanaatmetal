@@ -1,0 +1,45 @@
+@model SanaatMetal.Areas.Admin.Controllers.LoginVm
+@{ Layout = null; }
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>ورود به پنل مدیریت</title>
+    <link rel="stylesheet" href="~/css/fonts.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+    <div class="a-login">
+        <div class="a-login-card">
+            <div class="text-center mb-4">
+                <div class="a-brand-logo a-brand-logo-lg mx-auto mb-3"><img src="~/img/brand/logo-mark.svg" alt="" width="72" height="72" /></div>
+                <h1 class="h3" style="font-family:Titr,Lalezar,Vazirmatn">صنعت متال</h1>
+                <p class="text-white-50 small mb-0">ورود به پنل مدیریت</p>
+            </div>
+            <form method="post" asp-action="Login">
+                <div asp-validation-summary="All" class="text-warning small mb-2"></div>
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div class="mb-3">
+                    <label class="form-label" asp-for="UserName">نام کاربری یا ایمیل</label>
+                    <input class="form-control ltr" asp-for="UserName" autocomplete="username" autofocus />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" asp-for="Password">رمز عبور</label>
+                    <input class="form-control ltr" asp-for="Password" autocomplete="current-password" />
+                </div>
+                <div class="form-check mb-4">
+                    <input class="form-check-input" asp-for="RememberMe" />
+                    <label class="form-check-label small" asp-for="RememberMe">مرا به خاطر بسپار</label>
+                </div>
+                <button class="btn btn-a-accent w-100 py-2 fs-6" type="submit"><i class="bi bi-box-arrow-in-left ic"></i>ورود</button>
+            </form>
+            <div class="text-center mt-4"><a href="/" class="text-white-50 small"><i class="bi bi-arrow-right ic"></i>بازگشت به سایت</a></div>
+        </div>
+    </div>
+</body>
+</html>

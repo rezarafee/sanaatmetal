@@ -1,0 +1,70 @@
+@model ReportTable
+@{
+    ViewData["Title"] = "گزارش‌ها";
+    var f = (SanaatMetal.Areas.Admin.Controllers.ReportFilter)ViewBag.Filter;
+    var cats = (List<Category>)ViewBag.Categories;
+}
+<div class="row g-3 mb-4">
+    @foreach (var k in SanaatMetal.Areas.Admin.Controllers.ReportsController.Kinds.Where(k => !k.NeedsPricing || Can(Permissions.PricingView)))
+    {
+        <div class="col-6 col-md-4 col-xl-2">
+            <a asp-route-kind="@k.Key" class="a-card a-card-body d-block text-center h-100 @(f.Kind == k.Key ? "border-primary border-2" : "")" style="color:inherit">
+                <i class="bi @k.Icon fs-3 @(f.Kind == k.Key ? "text-primary" : "text-muted")"></i>
+                <div class="small fw-bold mt-2">@k.Title</div>
+            </a>
+        </div>
+    }
+</div>
+<div class="a-card">
+    <form class="a-card-head" method="get">
+        <input type="hidden" name="kind" value="@f.Kind" />
+        <h5><i class="bi bi-funnel ic"></i>@Model.Title</h5>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            @if (f.Kind != "pricelist")
+            {
+                <input class="form-control form-control-sm ltr" style="width:130px" name="from" value="@f.From" placeholder="از ۱۴۰۵/۰۱/۰۱" />
+                <input class="form-control form-control-sm ltr" style="width:130px" name="to" value="@f.To" placeholder="تا ۱۴۰۵/۱۲/۲۹" />
+            }
+            @if (f.Kind is "sales" or "products" or "customers")
+            {
+                <select class="form-select form-select-sm" style="width:130px" name="payment"><option value="">همه پرداخت‌ها</option>@foreach (var p in Enum.GetValues<PaymentMethod>()) { <option value="@p" selected="@(f.Payment == p)">@p.DisplayName()</option> }</select>
+                <select class="form-select form-select-sm" style="width:130px" name="type">@foreach (var t in Enum.GetValues<InvoiceType>()) { <option value="@t" selected="@((f.Type ?? InvoiceType.Sale) == t)">@t.DisplayName()</option> }</select>
+            }
+            @if (f.Kind is "products" or "pricelist" or "pricehistory")
+            {
+                <select class="form-select form-select-sm" style="width:140px" name="categoryId"><option value="">همه دسته‌ها</option>@foreach (var c in cats) { <option value="@c.Id" selected="@(f.CategoryId == c.Id)">@c.NameFa</option> }</select>
+            }
+            <button class="btn btn-soft btn-sm" name="format" value="view"><i class="bi bi-search ic"></i>نمایش</button>
+            <button class="btn btn-soft-success btn-sm" name="format" value="excel"><i class="bi bi-file-earmark-excel ic"></i>Excel</button>
+            <button class="btn btn-soft-danger btn-sm" name="format" value="pdf"><i class="bi bi-file-earmark-pdf ic"></i>PDF</button>
+        </div>
+    </form>
+    <div class="px-3 pt-2 small text-muted">@Fmt.FaDigits(Model.Subtitle) — @N(Model.Rows.Count) ردیف</div>
+    <div class="table-responsive">
+        <table class="table a-table table-hover table-sm">
+            <thead><tr><th>#</th>@foreach (var c in Model.Columns) { <th>@c.Header</th> }</tr></thead>
+            <tbody>
+                @{ var n = 0; }
+                @foreach (var r in Model.Rows.Take(1000))
+                {
+                    n++;
+                    <tr><td class="text-muted">@N(n)</td>
+                        @for (var i = 0; i < Model.Columns.Count; i++)
+                        {
+                            var v = i < r.Length ? r[i] : null;
+                            <td class="@(Model.Columns[i].Numeric ? "num" : "")">@(v switch { decimal d => N(d), int x => N(x), null => "", _ => Fmt.FaDigits(v.ToString()) })</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+            @if (Model.Totals is not null)
+            {
+                <tfoot><tr class="fw-black"><td></td>
+                    @for (var i = 0; i < Model.Columns.Count; i++) { var v = i < Model.Totals.Length ? Model.Totals[i] : null; <td class="num">@(v switch { decimal d => N(d), int x => N(x), null => "", _ => Fmt.FaDigits(v.ToString()) })</td> }
+                </tr></tfoot>
+            }
+        </table>
+        @if (Model.Rows.Count == 0) { <div class="a-empty"><i class="bi bi-clipboard-data"></i>داده‌ای برای این گزارش وجود ندارد.</div> }
+        @if (Model.Rows.Count > 1000) { <div class="p-3 small text-muted">فقط ۱۰۰۰ ردیف اول نمایش داده شد؛ برای همه ردیف‌ها خروجی Excel بگیرید.</div> }
+    </div>
+</div>

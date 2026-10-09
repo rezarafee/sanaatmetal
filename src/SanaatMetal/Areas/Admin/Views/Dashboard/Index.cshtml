@@ -1,0 +1,124 @@
+@model SanaatMetal.Areas.Admin.Controllers.DashboardVm
+@{ ViewData["Title"] = "داشبورد"; }
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="fw-black h4 mb-1">سلام، @User.DisplayName() 👋</h2>
+        <p class="text-muted mb-0">خلاصه وضعیت امروز @D(DateTime.UtcNow)</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Can(Permissions.InvoicesCreate)) { <a class="btn btn-a" asp-controller="Invoices" asp-action="Create"><i class="bi bi-plus-lg ic"></i>فاکتور جدید</a> }
+        @if (Can(Permissions.CatalogManage)) { <a class="btn btn-soft" asp-controller="Products" asp-action="Create"><i class="bi bi-box-seam ic"></i>محصول جدید</a> }
+    </div>
+</div>
+
+<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-xl-5">
+    @if (Can(Permissions.InvoicesView) || Can(Permissions.Reports))
+    {
+        <div class="col"><div class="a-stat g-blue"><i class="bi bi-graph-up-arrow big"></i><small>فروش این ماه (@N(Model.InvoicesThisMonth) فاکتور)</small><div class="v num">@N(Model.SalesThisMonth)</div><small>ریال</small></div></div>
+        @if (Can(Permissions.PricingView))
+        {
+            <div class="col"><div class="a-stat g-green"><i class="bi bi-cash-coin big"></i><small>سود ناخالص این ماه</small><div class="v num">@N(Model.ProfitThisMonth)</div><small>ریال</small></div></div>
+        }
+    }
+    @if (Can(Permissions.OrdersView))
+    {
+        <div class="col"><a asp-controller="Orders" asp-action="Index" class="a-stat g-orange d-block"><i class="bi bi-cart-check big"></i><small>سفارش‌های جدید سایت</small><div class="v">@N(Model.NewOrders)</div><small>در انتظار پیگیری</small></a></div>
+    }
+    @if (Can(Permissions.MessagesView))
+    {
+        <div class="col"><a asp-controller="Messages" asp-action="Index" class="a-stat g-purple d-block"><i class="bi bi-envelope-paper big"></i><small>پیام‌های خوانده‌نشده</small><div class="v">@N(Model.UnreadMessages)</div><small>@N(Model.FailedEmails) پیام ایمیل نشده</small></a></div>
+    }
+    <div class="col"><div class="a-stat g-slate"><i class="bi bi-box-seam big"></i><small>محصولات / سایزها</small><div class="v">@N(Model.Products) / @N(Model.Variants)</div><small>@N(Model.Customers) خریدار ثبت‌شده</small></div></div>
+</div>
+
+<div class="row g-4">
+    @if (Can(Permissions.InvoicesView) || Can(Permissions.Reports))
+    {
+        <div class="col-xl-8">
+            <div class="a-card h-100">
+                <div class="a-card-head"><h5><i class="bi bi-bar-chart ic text-primary"></i>فروش شش ماه اخیر</h5><span class="text-muted small">ریال</span></div>
+                <div class="a-card-body"><canvas id="salesChart" height="120"></canvas></div>
+                <script type="application/json" id="salesData">@Html.Raw(Model.ChartJson)</script>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="a-card h-100">
+                <div class="a-card-head"><h5><i class="bi bi-pie-chart ic text-warning"></i>نقدی / چکی (۶ ماه)</h5></div>
+                <div class="a-card-body"><canvas id="payChart" height="220"></canvas></div>
+            </div>
+        </div>
+    }
+    @if (Can(Permissions.OrdersView))
+    {
+        <div class="col-xl-6">
+            <div class="a-card h-100">
+                <div class="a-card-head"><h5><i class="bi bi-cart ic text-warning"></i>آخرین سفارش‌های سایت</h5><a asp-controller="Orders" asp-action="Index" class="small">همه</a></div>
+                <div class="table-responsive">
+                    <table class="table a-table table-hover">
+                        <tbody>
+                            @foreach (var o in Model.RecentOrders)
+                            {
+                                <tr>
+                                    <td><a asp-controller="Orders" asp-action="Details" asp-route-id="@o.Id" class="fw-bold ltr d-inline-block">@o.Number</a></td>
+                                    <td class="ltr">@o.Mobile</td>
+                                    <td>@(o.CompanyName ?? o.FullName)</td>
+                                    <td><partial name="_OrderStatus" model="o.Status" /></td>
+                                    <td class="text-muted small">@D(o.CreatedAt, true)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @if (Model.RecentOrders.Count == 0) { <div class="a-empty"><i class="bi bi-cart"></i>سفارشی ثبت نشده</div> }
+                </div>
+            </div>
+        </div>
+    }
+    @if (Can(Permissions.MessagesView))
+    {
+        <div class="col-xl-6">
+            <div class="a-card h-100">
+                <div class="a-card-head"><h5><i class="bi bi-envelope ic text-primary"></i>آخرین پیام‌ها</h5><a asp-controller="Messages" asp-action="Index" class="small">همه</a></div>
+                <div class="list-group list-group-flush">
+                    @foreach (var m in Model.RecentMessages)
+                    {
+                        <a asp-controller="Messages" asp-action="Details" asp-route-id="@m.Id" class="list-group-item list-group-item-action bg-transparent d-flex gap-3 align-items-center">
+                            <span class="a-avatar" style="width:36px;height:36px">@(m.Name.Length > 0 ? m.Name[..1] : "?")</span>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="d-flex justify-content-between"><b class="@(m.IsRead ? "" : "text-primary")">@m.Name</b><small class="text-muted">@D(m.CreatedAt, true)</small></div>
+                                <div class="small text-muted text-truncate">@(m.Subject ?? m.Body)</div>
+                            </div>
+                            @if (!m.EmailSent) { <span class="pill pill-orange" title="ایمیل ارسال نشد"><i class="bi bi-envelope-x"></i></span> }
+                        </a>
+                    }
+                </div>
+                @if (Model.RecentMessages.Count == 0) { <div class="a-empty"><i class="bi bi-inbox"></i>پیامی نیست</div> }
+            </div>
+        </div>
+    }
+    @if (Model.ExpiringDocs.Count > 0)
+    {
+        <div class="col-12">
+            <div class="a-card">
+                <div class="a-card-head"><h5><i class="bi bi-alarm ic text-danger"></i>گواهی‌های منقضی یا رو به انقضا</h5><a asp-controller="Documents" asp-action="Index" class="small">مدیریت</a></div>
+                <div class="table-responsive">
+                    <table class="table a-table">
+                        <thead><tr><th>محصول</th><th>عنوان</th><th>نوع</th><th>تاریخ انقضا</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var d in Model.ExpiringDocs)
+                            {
+                                <tr>
+                                    <td>@d.Product?.NameFa</td><td>@d.TitleFa</td><td>@d.Type.DisplayName()</td>
+                                    <td>@Fmt.FaDigits(Fmt.JalaliDateOnly(d.ExpiresAt))</td>
+                                    <td>@if (d.IsExpired) { <span class="pill pill-red">منقضی شده</span> } else { <span class="pill pill-orange">رو به انقضا</span> }</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.js"></script>
+}

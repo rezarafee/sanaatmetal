@@ -1,0 +1,84 @@
+@model Invoice
+@{
+    ViewData["Title"] = Model.Type.DisplayName() + " " + Fmt.FaDigits(Model.Number);
+    var s = (SiteSettings)ViewBag.Settings;
+    var showMoney = Can(Permissions.InvoicesView) || Can(Permissions.InvoicesCreate);
+}
+<div class="d-flex flex-wrap gap-2 mb-3 no-print">
+    <a class="btn btn-a" asp-action="Pdf" asp-route-id="@Model.Id"><i class="bi bi-filetype-pdf ic"></i>دانلود PDF</a>
+    <button class="btn btn-soft" type="button" data-print><i class="bi bi-printer ic"></i>چاپ</button>
+    @if (Can(Permissions.InvoicesEdit))
+    {
+        <a class="btn btn-soft-success" asp-action="Edit" asp-route-id="@Model.Id"><i class="bi bi-pencil ic"></i>ویرایش</a>
+        <form method="post" asp-action="SetStatus" asp-route-id="@Model.Id" class="d-flex gap-1">
+            <select class="form-select" name="status">@foreach (var st in Enum.GetValues<InvoiceStatus>()) { <option value="@st" selected="@(Model.Status == st)">@st.DisplayName()</option> }</select>
+            <button class="btn btn-soft">تغییر وضعیت</button>
+        </form>
+    }
+    @if (Can(Permissions.InvoicesDelete))
+    {
+        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" data-confirm="این فاکتور حذف شود؟" class="me-auto"><button class="btn btn-soft-danger"><i class="bi bi-trash3 ic"></i>حذف</button></form>
+    }
+</div>
+<div class="a-card">
+    <div class="a-card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between gap-3 border-bottom pb-3 mb-3">
+            <div>
+                <h3 class="fw-black mb-1" style="font-family:Titr,Lalezar,Vazirmatn;font-weight:400">@s.CompanyNameFa</h3>
+                <div class="text-muted small">@s.SloganFa</div>
+            </div>
+            <div class="text-start">
+                <h4 class="fw-bold text-primary mb-1">@Model.Type.DisplayName()</h4>
+                <div>شماره: <b class="ltr d-inline-block">@Model.Number</b></div>
+                <div>تاریخ: <b>@D(Model.IssueDate)</b></div>
+                <partial name="_InvoiceStatus" model="Model.Status" />
+            </div>
+        </div>
+        <div class="row g-2 mb-3 small">
+            <div class="col-md-4"><span class="text-muted">خریدار:</span> <b>@Model.CustomerName</b></div>
+            <div class="col-md-4"><span class="text-muted">شرکت:</span> @Model.CompanyName</div>
+            <div class="col-md-4"><span class="text-muted">موبایل:</span> <span class="ltr d-inline-block">@Model.Mobile</span></div>
+            <div class="col-md-4"><span class="text-muted">کد اقتصادی:</span> @Model.EconomicCode</div>
+            <div class="col-md-4"><span class="text-muted">شناسه ملی:</span> @Model.NationalId</div>
+            <div class="col-md-4"><span class="text-muted">نشانی:</span> @Model.Address</div>
+        </div>
+        <div class="table-responsive">
+            <table class="table a-table table-bordered">
+                <thead><tr><th>ردیف</th><th>شرح کالا</th><th>تعداد</th><th>واحد</th>@if (showMoney) { <th>فی (ریال)</th><th>تخفیف</th><th>مبلغ (ریال)</th> }</tr></thead>
+                <tbody>
+                    @{ var n = 0; }
+                    @foreach (var it in Model.Items.OrderBy(x => x.SortOrder))
+                    {
+                        n++;
+                        <tr><td>@N(n)</td><td>@it.Description</td><td>@N(it.Quantity)</td><td>@it.Unit</td>
+                            @if (showMoney) { <td class="num">@N(it.UnitPrice)</td><td class="num">@(it.DiscountAmount > 0 ? N(it.DiscountAmount) : "-")</td><td class="num fw-bold">@N(it.LineTotal)</td> }</tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="row g-4 mt-1">
+            <div class="col-md-7 small">
+                <div><b>نحوه پرداخت:</b> @Model.PaymentMethod.DisplayName()</div>
+                @if (showMoney && Model.CashAmount > 0) { <div>نقدی: @N(Model.CashAmount) ریال</div> }
+                @if (showMoney && Model.ChequeAmount > 0) { <div>چک: @N(Model.ChequeAmount) ریال @(Model.ChequeCount > 0 ? $"({N(Model.ChequeCount)} فقره)" : "") @(Model.ChequeDueDate.HasValue ? "— سررسید " + Fmt.FaDigits(Fmt.JalaliDateOnly(Model.ChequeDueDate)) : "")</div> }
+                @if (!string.IsNullOrEmpty(Model.ChequeDetails)) { <div class="text-muted">@Model.ChequeDetails</div> }
+                @if (!string.IsNullOrEmpty(Model.Notes)) { <div class="mt-2"><b>توضیحات:</b> @Model.Notes</div> }
+                <div class="text-muted mt-3">ثبت: @Model.CreatedByName — @D(Model.CreatedAt, true) @if (Model.UpdatedByName != null) { <br /><span>آخرین ویرایش: @Model.UpdatedByName — @D(Model.UpdatedAt, true)</span> }</div>
+            </div>
+            @if (showMoney)
+            {
+                <div class="col-md-5">
+                    <div class="inv-total">
+                        <div class="row-t"><span>جمع کل</span><b class="num">@N(Model.Subtotal)</b></div>
+                        @if (Model.DiscountTotal > 0) { <div class="row-t"><span>تخفیف اقلام</span><b class="num text-danger">@N(Model.DiscountTotal)</b></div> }
+                        @if (Model.ExtraDiscount > 0) { <div class="row-t"><span>تخفیف فاکتور</span><b class="num text-danger">@N(Model.ExtraDiscount)</b></div> }
+                        @if (Model.TaxAmount > 0) { <div class="row-t"><span>مالیات و عوارض (@N(Model.TaxPercent)٪)</span><b class="num">@N(Model.TaxAmount)</b></div> }
+                        @if (Model.ShippingCost > 0) { <div class="row-t"><span>هزینه حمل</span><b class="num">@N(Model.ShippingCost)</b></div> }
+                        <div class="row-t grand"><span>مبلغ قابل پرداخت</span><span class="num">@N(Model.GrandTotal) ریال</span></div>
+                        @if (Can(Permissions.PricingView)) { <div class="row-t small text-muted no-print"><span>بهای تمام‌شده / سود</span><span class="num">@N(Model.CostTotal) / <b class="@(Model.Profit >= 0 ? "text-success" : "text-danger")">@N(Model.Profit)</b></span></div> }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

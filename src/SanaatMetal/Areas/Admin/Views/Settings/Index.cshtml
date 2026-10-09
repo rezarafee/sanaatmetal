@@ -1,0 +1,79 @@
+@model SiteSettings
+@{ ViewData["Title"] = "تنظیمات سایت"; }
+<form method="post" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-building ic text-primary"></i>اطلاعات شرکت</h5></div>
+                <div class="a-card-body row g-3">
+                    <div class="col-md-6"><label class="form-label">نام شرکت (فارسی)</label><input class="form-control" asp-for="CompanyNameFa" /></div>
+                    <div class="col-md-6"><label class="form-label">نام شرکت (انگلیسی)</label><input class="form-control ltr" asp-for="CompanyNameEn" /></div>
+                    <div class="col-md-6"><label class="form-label">شعار (فارسی)</label><input class="form-control" asp-for="SloganFa" /></div>
+                    <div class="col-md-6"><label class="form-label">شعار (انگلیسی)</label><input class="form-control ltr" asp-for="SloganEn" /></div>
+                    <div class="col-md-6"><label class="form-label">تیتر بنر اصلی (فارسی)</label><input class="form-control" asp-for="HeroTitleFa" /></div>
+                    <div class="col-md-6"><label class="form-label">تیتر بنر اصلی (انگلیسی)</label><input class="form-control ltr" asp-for="HeroTitleEn" /></div>
+                    <div class="col-md-6"><label class="form-label">زیرتیتر بنر (فارسی)</label><textarea class="form-control" asp-for="HeroSubtitleFa" rows="2"></textarea></div>
+                    <div class="col-md-6"><label class="form-label">زیرتیتر بنر (انگلیسی)</label><textarea class="form-control ltr" asp-for="HeroSubtitleEn" rows="2"></textarea></div>
+                    <div class="col-md-6"><label class="form-label">درباره ما (فارسی)</label><textarea class="form-control" asp-for="AboutFa" rows="5"></textarea></div>
+                    <div class="col-md-6"><label class="form-label">درباره ما (انگلیسی)</label><textarea class="form-control ltr" asp-for="AboutEn" rows="5"></textarea></div>
+                </div>
+            </div>
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-telephone ic text-success"></i>اطلاعات تماس و شبکه‌های اجتماعی</h5></div>
+                <div class="a-card-body row g-3">
+                    <div class="col-md-4"><label class="form-label">تلفن</label><input class="form-control ltr" asp-for="Phone" /></div>
+                    <div class="col-md-4"><label class="form-label">موبایل</label><input class="form-control ltr" asp-for="Mobile" /></div>
+                    <div class="col-md-4"><label class="form-label">ایمیل عمومی</label><input class="form-control ltr" asp-for="Email" /></div>
+                    <div class="col-md-6"><label class="form-label">نشانی (فارسی)</label><input class="form-control" asp-for="AddressFa" /></div>
+                    <div class="col-md-6"><label class="form-label">نشانی (انگلیسی)</label><input class="form-control ltr" asp-for="AddressEn" /></div>
+                    <div class="col-md-6"><label class="form-label">ساعات کاری (فارسی)</label><input class="form-control" asp-for="WorkingHoursFa" /></div>
+                    <div class="col-md-6"><label class="form-label">ساعات کاری (انگلیسی)</label><input class="form-control ltr" asp-for="WorkingHoursEn" /></div>
+                    <div class="col-md-3"><label class="form-label">اینستاگرام</label><input class="form-control ltr" asp-for="Instagram" placeholder="https://" /></div>
+                    <div class="col-md-3"><label class="form-label">تلگرام</label><input class="form-control ltr" asp-for="Telegram" placeholder="https://" /></div>
+                    <div class="col-md-3"><label class="form-label">واتساپ</label><input class="form-control ltr" asp-for="WhatsApp" placeholder="https://" /></div>
+                    <div class="col-md-3"><label class="form-label">لینکدین</label><input class="form-control ltr" asp-for="LinkedIn" placeholder="https://" /></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="a-card a-card-body mb-4">
+                <label class="form-label">لوگو</label>
+                <img class="w-100 rounded-4 border p-2 mb-2" style="aspect-ratio:3/1;object-fit:contain" src="@(Model.LogoPath ?? "/favicon.svg")" data-preview-for="logo" alt="" />
+                <input type="file" class="form-control mb-2" name="logo" id="logo" accept=".jpg,.jpeg,.png,.webp" />
+                @if (Model.LogoPath != null) { <div class="form-check"><input class="form-check-input" type="checkbox" name="removeLogo" value="true" id="rl" /><label class="form-check-label small" for="rl">حذف لوگو</label></div> }
+            </div>
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-receipt ic text-warning"></i>فاکتور</h5></div>
+                <div class="a-card-body row g-3">
+                    <div class="col-6"><label class="form-label">مالیات پیش‌فرض ٪</label><input class="form-control" asp-for="DefaultTaxPercent" type="text" /></div>
+                    <div class="col-6"><label class="form-label">واحد پول</label><input class="form-control" asp-for="CurrencyFa" /></div>
+                    <div class="col-6"><label class="form-label">کد اقتصادی شرکت</label><input class="form-control ltr" asp-for="EconomicCode" /></div>
+                    <div class="col-6"><label class="form-label">شماره ثبت</label><input class="form-control ltr" asp-for="RegistrationNumber" /></div>
+                    <div class="col-12"><label class="form-label">پاورقی فاکتور</label><textarea class="form-control" asp-for="InvoiceFooter" rows="2"></textarea></div>
+                    <input type="hidden" asp-for="CurrencyEn" />
+                </div>
+            </div>
+            <div class="a-card">
+                <div class="a-card-head"><h5><i class="bi bi-envelope-at ic text-danger"></i>سرور ایمیل (SMTP)</h5></div>
+                <div class="a-card-body row g-3">
+                    <div class="col-8"><label class="form-label">سرور</label><input class="form-control ltr" asp-for="SmtpHost" placeholder="mail.example.com" /></div>
+                    <div class="col-4"><label class="form-label">پورت</label><input class="form-control ltr" asp-for="SmtpPort" type="number" /></div>
+                    <div class="col-12"><label class="form-label">نام کاربری</label><input class="form-control ltr" asp-for="SmtpUser" autocomplete="off" /></div>
+                    <div class="col-12"><label class="form-label">رمز عبور @(Model.SmtpPasswordProtected != null ? "(ذخیره شده — برای تغییر وارد کنید)" : "")</label><input class="form-control ltr" type="password" name="smtpPassword" autocomplete="new-password" /></div>
+                    <div class="col-12"><label class="form-label">ایمیل فرستنده</label><input class="form-control ltr" asp-for="SmtpFrom" placeholder="noreply@example.com" /></div>
+                    <div class="col-12"><label class="form-label">دریافت پیام‌ها و سفارش‌ها در ایمیل</label><input class="form-control ltr" asp-for="NotifyEmail" placeholder="sales@example.com" /></div>
+                    <div class="col-12"><div class="form-check form-switch"><input class="form-check-input" asp-for="SmtpUseSsl" /><label class="form-check-label" asp-for="SmtpUseSsl">اتصال امن (SSL/TLS)</label></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="position-sticky bottom-0 py-3 no-print" style="z-index:5">
+        <button class="btn btn-a btn-lg px-5 shadow"><i class="bi bi-check2-circle ic"></i>ذخیره تنظیمات</button>
+    </div>
+</form>
+<form method="post" asp-action="TestEmail" class="a-card a-card-body mt-2 d-flex flex-wrap gap-2 align-items-center">
+    <span class="fw-bold"><i class="bi bi-send-check ic"></i>آزمایش ارسال ایمیل:</span>
+    <input class="form-control ltr" style="max-width:300px" type="email" name="to" required placeholder="you@example.com" />
+    <button class="btn btn-soft">ارسال ایمیل آزمایشی</button>
+</form>

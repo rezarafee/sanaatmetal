@@ -1,0 +1,144 @@
+@model ProductDetailVm
+@{
+    var p = Model.Product;
+    var name = L.Pick(p.NameFa, p.NameEn);
+    ViewData["Title"] = name;
+    ViewData["Description"] = L.Pick(p.SummaryFa, p.SummaryEn);
+    ViewData["Crumb"] = (L["Products"], "/products");
+    var images = p.Images.Count > 0 ? p.Images.Select(i => (i.FilePath, L.Pick(i.AltFa, i.AltEn))).ToList() : new() { ("/img/placeholder.svg", name) };
+    var anyPrice = p.Variants.Any(v => !v.CallForPrice && !p.CallForPrice && v.SalePrice > 0);
+}
+<partial name="_PageHead" model="(name, (string?)null)" />
+
+<section class="sm-section pt-5">
+    <div class="container">
+        <div class="row g-5">
+            <div class="col-lg-5">
+                <div class="sm-gallery">
+                    <div class="swiper main">
+                        <div class="swiper-wrapper">
+                            @foreach (var (src, alt) in images)
+                            {
+                                <div class="swiper-slide"><img src="@src" alt="@alt" /></div>
+                            }
+                        </div>
+                        <div class="swiper-pagination d-lg-none"></div>
+                    </div>
+                    @if (images.Count > 1)
+                    {
+                        <div class="swiper thumbs d-none d-lg-block">
+                            <div class="swiper-wrapper">
+                                @foreach (var (src, alt) in images)
+                                {
+                                    <div class="swiper-slide"><img src="@src" alt="@alt" loading="lazy" /></div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <a href="/products?cat=@p.Category?.Slug" class="sm-hero-chip mb-3 text-decoration-none" style="color:var(--sm-accent)"><i class="bi @(p.Category?.Icon ?? "bi-box")"></i>@L.Pick(p.Category?.NameFa, p.Category?.NameEn)</a>
+                <h1 class="fw-black fs-2 mb-3">@name</h1>
+                @if (!string.IsNullOrEmpty(L.Pick(p.SummaryFa, p.SummaryEn)))
+                {
+                    <p class="text-muted fs-6" style="line-height:2">@L.Pick(p.SummaryFa, p.SummaryEn)</p>
+                }
+                <div class="sm-spec my-4">
+                    <div><span>@L["Code"]</span><b dir="ltr">@p.Code</b></div>
+                    @if (p.Material is not null) { <div><span>@L["Material"]</span><b>@L.Pick(p.Material.NameFa, p.Material.NameEn)</b></div> }
+                    @if (!string.IsNullOrEmpty(p.Standard)) { <div><span>@L["Standard"]</span><b dir="ltr">@p.Standard</b></div> }
+                    @if (!string.IsNullOrEmpty(p.Brand)) { <div><span>@L["Brand"]</span><b>@p.Brand</b></div> }
+                    @if (!string.IsNullOrEmpty(p.Origin)) { <div><span>@L["Origin"]</span><b>@p.Origin</b></div> }
+                    @if (p.Documents.Count > 0) { <div><span>@L["Documents"]</span><b>@L.Num(p.Documents.Count)</b></div> }
+                </div>
+
+                <h5 class="fw-bold mb-3"><i class="bi bi-rulers ic text-warning"></i>@L["Specifications"]</h5>
+                <div class="sm-variants mb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>@L["Size"]</th>
+                                    @if (p.Variants.Any(v => !string.IsNullOrEmpty(v.PressureClass))) { <th>@L["Class"]</th> }
+                                    @if (p.Variants.Any(v => !string.IsNullOrEmpty(v.Schedule))) { <th>@L["Schedule"]</th> }
+                                    <th>@L["Price"]</th>
+                                    <th>@L["Quantity"]</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var v in p.Variants)
+                                {
+                                    var call = p.CallForPrice || v.CallForPrice || v.SalePrice is null;
+                                    <tr data-row>
+                                        <td class="fw-bold" dir="ltr">@v.Size</td>
+                                        @if (p.Variants.Any(x => !string.IsNullOrEmpty(x.PressureClass))) { <td dir="ltr">@v.PressureClass</td> }
+                                        @if (p.Variants.Any(x => !string.IsNullOrEmpty(x.Schedule))) { <td dir="ltr">@v.Schedule</td> }
+                                        <td class="text-nowrap">
+                                            @if (call)
+                                            {
+                                                <span class="sm-call"><i class="bi bi-telephone-outbound"></i>@L["CallForPrice"]</span>
+                                            }
+                                            else
+                                            {
+                                                @if (v.DiscountPercent > 0)
+                                                {
+                                                    <span class="sm-price-old">@L.Num(v.SalePrice)</span>
+                                                    <span class="badge text-bg-danger">@L.Num(v.DiscountPercent)٪</span><br />
+                                                }
+                                                <span class="sm-price">@L.Num(v.FinalPrice) <small>@L["Currency"] / @v.Unit</small></span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="qty-box"><button type="button" data-qty="1">+</button><input type="number" min="1" value="1" aria-label="@L["Quantity"]"><button type="button" data-qty="-1">−</button></div>
+                                        </td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-sm-primary text-nowrap" data-add-cart="@v.Id"><i class="bi bi-bag-plus ic"></i><span class="d-none d-md-inline">@(call ? L["RequestQuote"] : L["AddToCart"])</span></button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @if (!anyPrice)
+                {
+                    <div class="alert alert-warning d-flex gap-2"><i class="bi bi-info-circle"></i>@L["CartNote"]</div>
+                }
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <ul class="nav sm-tabs border-bottom mb-4" role="tablist">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-desc" type="button">@L["Description"]</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cert" type="button">@L["Certificates"] <span class="badge rounded-pill text-bg-success">@L.Num(Model.Certificates.Count)</span></button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-ds" type="button">@L["Datasheets"] <span class="badge rounded-pill text-bg-danger">@L.Num(Model.Datasheets.Count)</span></button></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade show active sm-rich" id="tab-desc">
+                    @{ var desc = L.Pick(p.DescriptionFa, p.DescriptionEn); }
+                    @foreach (var para in desc.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <p>@para</p>
+                    }
+                </div>
+                <div class="tab-pane fade" id="tab-cert"><partial name="_DocList" model="Model.Certificates" /></div>
+                <div class="tab-pane fade" id="tab-ds"><partial name="_DocList" model="Model.Datasheets" /></div>
+            </div>
+        </div>
+
+        @if (Model.Related.Count > 0)
+        {
+            <div class="mt-5 pt-4">
+                <h3 class="sm-title mb-4">@L["RelatedProducts"]</h3>
+                <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+                    @foreach (var r in Model.Related)
+                    {
+                        <div class="col reveal"><partial name="_ProductCard" model="r" /></div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</section>

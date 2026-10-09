@@ -1,0 +1,51 @@
+@model SiteSettings
+<section class="sm-section" id="contact">
+    <div class="container">
+        <div class="sm-contact p-4 p-lg-5 reveal">
+            <div class="row g-5 align-items-center">
+                <div class="col-lg-5">
+                    <span class="sm-hero-chip mb-3"><i class="bi bi-envelope-paper"></i>@L["Contact"]</span>
+                    <h2 class="sm-title display-6 mb-3">@L["ContactTitle"]</h2>
+                    <p class="opacity-75 mb-4" style="line-height:2">@L["ContactSub"]</p>
+                    <ul class="list-unstyled sm-contact-info mb-0">
+                        @if (!string.IsNullOrEmpty(Model.Phone))
+                        {
+                            <li><i class="bi bi-telephone"></i><div><small class="opacity-75 d-block">@L["Phone"]</small><a class="text-white fw-bold" href="tel:@Model.Phone" dir="ltr">@Model.Phone</a></div></li>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Email))
+                        {
+                            <li><i class="bi bi-envelope"></i><div><small class="opacity-75 d-block">@L["Email"]</small><a class="text-white fw-bold" href="mailto:@Model.Email">@Model.Email</a></div></li>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.AddressFa))
+                        {
+                            <li><i class="bi bi-geo-alt"></i><div><small class="opacity-75 d-block">@L["Address"]</small><span class="fw-bold">@L.Pick(Model.AddressFa, Model.AddressEn)</span></div></li>
+                        }
+                    </ul>
+                </div>
+                <div class="col-lg-7">
+                    @if (TempData["ContactOk"] is string ok)
+                    {
+                        <div class="alert alert-success d-flex gap-2 align-items-center"><i class="bi bi-check-circle-fill fs-4"></i>@ok</div>
+                    }
+                    @if (TempData["ContactError"] is string err)
+                    {
+                        <div class="alert alert-danger">@err</div>
+                    }
+                    <form method="post" asp-antiforgery="true" action="/contact" class="needs-validation" novalidate>
+                        <input type="hidden" name="returnUrl" value="@(Context.Request.Path)#contact" />
+                        <div class="hp-field" aria-hidden="true"><label>Website<input type="text" name="Contact.Website" tabindex="-1" autocomplete="off" /></label></div>
+                        <div class="row g-3">
+                            <div class="col-md-6"><input class="form-control" name="Contact.Name" placeholder="@L["Name"] *" required maxlength="150" /></div>
+                            <div class="col-md-6"><input class="form-control ltr-input" type="email" name="Contact.Email" placeholder="@L["Email"] *" required maxlength="200" /></div>
+                            <div class="col-md-6"><input class="form-control ltr-input" type="tel" name="Contact.Phone" placeholder="@L["Phone"]" maxlength="20" /></div>
+                            <div class="col-md-6"><input class="form-control" name="Contact.Company" placeholder="@L["Company"]" maxlength="200" /></div>
+                            <div class="col-12"><input class="form-control" name="Contact.Subject" placeholder="@L["Subject"]" maxlength="200" /></div>
+                            <div class="col-12"><textarea class="form-control" name="Contact.Body" rows="5" placeholder="@L["Message"] *" required maxlength="4000"></textarea></div>
+                            <div class="col-12"><button class="btn btn-sm-accent px-5 py-3" type="submit"><i class="bi bi-send ic"></i>@L["Send"]</button></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

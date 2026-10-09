@@ -1,0 +1,47 @@
+@model CheckoutVm
+@{ ViewData["Title"] = L["Cart"]; }
+<partial name="_PageHead" model='(L["Cart"], (string?)null)' />
+<section class="sm-section pt-5" id="cart-page">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="sm-cart-box">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0"><i class="bi bi-bag ic"></i>@L["Cart"]</h5>
+                        <span class="text-muted small"><span id="cart-count">0</span> @L["Items"]</span>
+                    </div>
+                    <div id="cart-items"><div class="text-center p-5"><div class="spinner-border text-primary"></div></div></div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="sm-summary" id="cart-summary">
+                    <div class="sm-cart-box p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">@L["CartTotal"]</span>
+                            <span class="sm-price fs-4"><span id="cart-total">0</span> <small>@L["Currency"]</small></span>
+                        </div>
+                        <p class="small text-muted border-bottom pb-3">@L["CartNote"]</p>
+                        <h6 class="fw-bold mt-3">@L["CheckoutTitle"]</h6>
+                        <p class="small text-muted">@L["CheckoutHint"]</p>
+                        <div asp-validation-summary="All" class="text-danger small"></div>
+                        <form method="post" asp-antiforgery="true" action="/cart/checkout" id="checkout-form" class="needs-validation" novalidate>
+                            <input type="hidden" asp-for="ItemsJson" id="cart-json" />
+                            <div class="hp-field" aria-hidden="true"><input type="text" name="Website" tabindex="-1" autocomplete="off" /></div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold" for="Mobile">@L["Mobile"] *</label>
+                                <input class="form-control form-control-lg ltr-input" asp-for="Mobile" type="tel" inputmode="numeric" placeholder="09xxxxxxxxx" required pattern="[+0-9۰-۹ \-]{10,16}" maxlength="14" autocomplete="tel" />
+                                <div class="invalid-feedback">@L["InvalidMobile"]</div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-sm-6"><input class="form-control" asp-for="FullName" placeholder="@L["FullName"] (@L["Optional"])" maxlength="150" /></div>
+                                <div class="col-sm-6"><input class="form-control" asp-for="CompanyName" placeholder="@L["Company"] (@L["Optional"])" maxlength="200" /></div>
+                            </div>
+                            <textarea class="form-control mb-3" asp-for="Note" rows="2" placeholder="@L["OrderNote"] (@L["Optional"])" maxlength="1000"></textarea>
+                            <button class="btn btn-sm-accent w-100 py-3 fs-6" type="submit"><i class="bi bi-check2-circle ic"></i>@L["Checkout"]</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

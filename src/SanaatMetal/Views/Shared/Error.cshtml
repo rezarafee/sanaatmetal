@@ -1,0 +1,9 @@
+@model int
+@{ ViewData["Title"] = Model == 404 ? "404" : L["Error"]; }
+<section class="sm-section">
+    <div class="container text-center py-5">
+        <div class="display-1 fw-black" style="color:var(--sm-primary)">@L.Num(Model)</div>
+        <p class="lead text-muted my-4">@(Model == 404 ? L["NotFound"] : L["Error"])</p>
+        <a href="/" class="btn btn-sm-primary"><i class="bi bi-house ic"></i>@L["BackHome"]</a>
+    </div>
+</section>

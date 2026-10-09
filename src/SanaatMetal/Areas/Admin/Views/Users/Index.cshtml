@@ -1,0 +1,27 @@
+@model List<SanaatMetal.Areas.Admin.Controllers.UserRow>
+@{ ViewData["Title"] = "کاربران"; }
+<div class="a-card">
+    <div class="a-card-head"><h5><i class="bi bi-people ic text-primary"></i>کاربران پنل</h5><a class="btn btn-a btn-sm" asp-action="Edit"><i class="bi bi-person-plus ic"></i>کاربر جدید</a></div>
+    <div class="table-responsive">
+        <table class="table a-table table-hover">
+            <thead><tr><th></th><th>نام</th><th>نام کاربری</th><th>ایمیل</th><th>نقش</th><th>آخرین ورود</th><th>وضعیت</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in Model)
+                {
+                    var u = r.User;
+                    <tr>
+                        <td><span class="a-avatar" style="width:36px;height:36px">@(u.FullName.Length > 0 ? u.FullName[..1] : "?")</span></td>
+                        <td class="fw-bold">@u.FullName</td><td class="ltr">@u.UserName</td><td class="ltr small">@u.Email</td>
+                        <td>@foreach (var role in r.Roles) { <span class="pill @(role == Roles.SuperAdmin ? "pill-red" : role == Roles.Admin ? "pill-orange" : role == Roles.SalesManager ? "pill-blue" : "pill-green")">@Roles.Title(role)</span> }</td>
+                        <td class="small">@D(u.LastLoginAt, true)</td>
+                        <td>@if (u.IsActive) { <span class="pill pill-green">فعال</span> } else { <span class="pill pill-gray">غیرفعال</span> }</td>
+                        <td><div class="a-actions">
+                            <a class="btn btn-soft-primary" asp-action="Edit" asp-route-id="@u.Id"><i class="bi bi-pencil"></i></a>
+                            <form method="post" asp-action="Delete" asp-route-id="@u.Id" data-confirm="کاربر «@u.FullName» حذف شود؟"><button class="btn btn-soft-danger"><i class="bi bi-trash3"></i></button></form>
+                        </div></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
