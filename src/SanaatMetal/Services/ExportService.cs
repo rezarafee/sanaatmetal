@@ -32,7 +32,9 @@ public class ExportService
         {
             if (_fontsLoaded) return;
             QuestPDF.Settings.License = LicenseType.Community;
-            foreach (var f in Directory.GetFiles(Path.Combine(contentRoot, "Fonts"), "*.ttf"))
+            var fontDir = Path.Combine(contentRoot, "Fonts");
+            if (!Directory.Exists(fontDir)) fontDir = Path.Combine(AppContext.BaseDirectory, "Fonts");
+            foreach (var f in Directory.Exists(fontDir) ? Directory.GetFiles(fontDir, "*.ttf") : [])
             {
                 using var s = File.OpenRead(f);
                 QuestPDF.Drawing.FontManager.RegisterFontFromStream(s);

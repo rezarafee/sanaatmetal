@@ -64,6 +64,7 @@ dotnet ef migrations add NameOfChange -p src/SanaatMetal -o Data/Migrations
 ```
 
 ## انتشار روی سرور (IIS یا لینوکس)
+راهنمای کامل قدم‌به‌قدم: [DEPLOY.md](DEPLOY.md)
 - `dotnet publish src/SanaatMetal -c Release -o publish`
 - پوشه `wwwroot/uploads` باید قابل نوشتن باشد و در بکاپ قرار بگیرد.
 - HTTPS را فعال کنید؛ در Production هدر HSTS و ریدایرکت به HTTPS فعال است.

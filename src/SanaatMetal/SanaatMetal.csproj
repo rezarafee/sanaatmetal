@@ -19,4 +19,9 @@
     <PackageReference Include="QuestPDF" Version="2026.9.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- فونت فارسی PDF ها؛ باید کنار برنامه منتشر شود -->
+    <None Update="Fonts\*.ttf" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
