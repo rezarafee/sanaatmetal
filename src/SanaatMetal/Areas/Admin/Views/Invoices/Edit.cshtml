@@ -9,8 +9,8 @@
     <input type="hidden" asp-for="OrderId" />
     <div asp-validation-summary="All" class="alert alert-danger" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")"></div>
     <div class="row g-4">
-        <div class="col-xl-9">
-            <div class="a-card mb-4">
+        <div class="col-xl-8">
+            <div class="a-card h-100">
                 <div class="a-card-head"><h5><i class="bi bi-person-vcard ic text-primary"></i>مشخصات خریدار</h5>
                     @if (Model.OrderId.HasValue) { <span class="pill pill-orange">از سفارش سایت</span> }
                 </div>
@@ -23,29 +23,44 @@
                     <div class="col-md-6"><label class="form-label">نشانی</label><input class="form-control" asp-for="Address" /></div>
                 </div>
             </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="a-card h-100">
+                <div class="a-card-head"><h5><i class="bi bi-receipt ic text-info"></i>مشخصات فاکتور</h5></div>
+                <div class="a-card-body row g-3">
+                    <div class="col-6"><label class="form-label">نوع</label><select class="form-select" asp-for="Type" asp-items="Html.GetEnumSelectList<InvoiceType>()"></select></div>
+                    @if (Can(Permissions.InvoicesEdit))
+                    {
+                        <div class="col-6"><label class="form-label">وضعیت</label><select class="form-select" asp-for="Status" asp-items="Html.GetEnumSelectList<InvoiceStatus>()"></select></div>
+                    }
+                    <div class="col-12"><label class="form-label">تاریخ صدور</label><input class="form-control ltr" asp-for="IssueDate" data-jdp autocomplete="off" placeholder="انتخاب تاریخ" id="issueDate" /></div>
+                </div>
+            </div>
+        </div>
 
+        <div class="col-12">
             <div class="a-card">
                 <div class="a-card-head"><h5><i class="bi bi-list-ol ic text-warning"></i>اقلام فاکتور</h5>
                     <button type="button" class="btn btn-a btn-sm" data-inv-add><i class="bi bi-plus-lg ic"></i>ردیف جدید</button>
                 </div>
                 @if (!canPrice) { <div class="alert alert-info m-3 mb-0 small"><i class="bi bi-info-circle ic"></i>قیمت کالاهای کاتالوگ به‌صورت خودکار از جدول قیمت درج می‌شود و قابل تغییر نیست.</div> }
-                <div class="table-responsive">
+                <div class="table-responsive inv-items-wrap">
                     <table class="table a-table inv-items mb-0">
-                        <thead><tr><th style="width:36%">شرح کالا (جستجو در محصولات)</th><th>تعداد</th><th>واحد</th><th>فی (ریال)</th><th>تخفیف ٪</th><th>مبلغ</th><th></th></tr></thead>
+                        <thead><tr><th class="text-center" style="width:44px">#</th><th style="min-width:340px">شرح کالا (جستجو در محصولات)</th><th style="width:110px">تعداد</th><th style="width:110px">واحد</th><th style="width:170px">فی (ریال)</th><th style="width:100px">تخفیف ٪</th><th style="width:160px">مبلغ</th><th style="width:52px"></th></tr></thead>
                         <tbody id="invRows">
                             @for (var i = 0; i < Model.Items.Count; i++)
                             {
                                 var it = Model.Items[i];
                                 <tr class="inv-row" data-locked="@(it.VariantId.HasValue && !canPrice ? "1" : "0")">
-                                    <td class="position-relative">
+                                    <td class="text-center text-muted" data-idx>@(i + 1)</td>
+                                    <td>
                                         <input type="hidden" name="Items[@i].VariantId" value="@it.VariantId" data-f="VariantId" />
                                         <input class="form-control" name="Items[@i].Description" value="@it.Description" data-f="Description" autocomplete="off" placeholder="نام یا کد کالا را تایپ کنید..." />
-                                        <div class="dropdown-menu w-100 inv-suggest"></div>
                                     </td>
-                                    <td><input class="form-control" name="Items[@i].Quantity" value="@it.Quantity.ToString("0.##")" data-f="Quantity" inputmode="decimal" style="min-width:70px" /></td>
-                                    <td><input class="form-control" name="Items[@i].Unit" value="@it.Unit" data-f="Unit" style="min-width:70px" /></td>
-                                    <td><input class="form-control num" name="Items[@i].UnitPrice" value="@it.UnitPrice.ToString("0")" data-f="UnitPrice" data-money style="min-width:120px" /></td>
-                                    <td><input class="form-control" name="Items[@i].DiscountPercent" value="@it.DiscountPercent.ToString("0.##")" data-f="DiscountPercent" inputmode="decimal" style="min-width:60px" /></td>
+                                    <td><input class="form-control" name="Items[@i].Quantity" value="@it.Quantity.ToString("0.##")" data-f="Quantity" inputmode="decimal" /></td>
+                                    <td><input class="form-control" name="Items[@i].Unit" value="@it.Unit" data-f="Unit" /></td>
+                                    <td><input class="form-control num" name="Items[@i].UnitPrice" value="@it.UnitPrice.ToString("0")" data-f="UnitPrice" data-money /></td>
+                                    <td><input class="form-control" name="Items[@i].DiscountPercent" value="@it.DiscountPercent.ToString("0.##")" data-f="DiscountPercent" inputmode="decimal" /></td>
                                     <td class="num fw-bold" data-line>0</td>
                                     <td><button type="button" class="btn btn-soft-danger btn-sm" data-inv-remove title="حذف ردیف"><i class="bi bi-x-lg"></i></button></td>
                                 </tr>
@@ -56,31 +71,51 @@
             </div>
         </div>
 
-        <div class="col-xl-3">
-            <div class="a-card a-card-body mb-4">
-                <div class="row g-3">
-                    <div class="col-6 col-xl-12"><label class="form-label">نوع</label><select class="form-select" asp-for="Type" asp-items="Html.GetEnumSelectList<InvoiceType>()"></select></div>
-                    @if (Can(Permissions.InvoicesEdit))
-                    {
-                        <div class="col-6 col-xl-12"><label class="form-label">وضعیت</label><select class="form-select" asp-for="Status" asp-items="Html.GetEnumSelectList<InvoiceStatus>()"></select></div>
-                    }
-                    <div class="col-12"><label class="form-label">تاریخ صدور</label><input class="form-control ltr" asp-for="IssueDate" placeholder="۱۴۰۵/۰۷/۱۷" /></div>
-                </div>
-            </div>
-            <div class="a-card a-card-body mb-4">
-                <label class="form-label">نحوه پرداخت</label>
-                <select class="form-select mb-3" asp-for="PaymentMethod" asp-items="Html.GetEnumSelectList<PaymentMethod>()" id="payMethod"></select>
-                <div data-pay="Mixed"><label class="form-label">مبلغ نقدی (ریال)</label><input class="form-control mb-3 num" asp-for="CashAmount" type="text" data-money /></div>
-                <div data-pay="Cheque Mixed">
-                    <div class="row g-2 mb-2">
-                        <div class="col-6"><label class="form-label">تعداد چک</label><input class="form-control" asp-for="ChequeCount" type="number" min="0" /></div>
-                        <div class="col-6"><label class="form-label">سررسید</label><input class="form-control ltr" asp-for="ChequeDueDate" placeholder="۱۴۰۵/۰۹/۰۱" /></div>
+        <div class="col-lg-8">
+            <div class="a-card h-100">
+                <div class="a-card-head"><h5><i class="bi bi-wallet2 ic text-success"></i>نحوه پرداخت</h5></div>
+                <div class="a-card-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6"><label class="form-label">روش پرداخت</label><select class="form-select" asp-for="PaymentMethod" asp-items="Html.GetEnumSelectList<PaymentMethod>()" id="payMethod"></select></div>
+                        <div class="col-sm-6" data-pay="Mixed"><label class="form-label">مبلغ نقدی (ریال)</label><input class="form-control num" asp-for="CashAmount" type="text" data-money data-calc /></div>
                     </div>
-                    <label class="form-label">جزئیات چک‌ها</label>
-                    <textarea class="form-control mb-2" asp-for="ChequeDetails" rows="2" placeholder="شماره چک، بانک، ..."></textarea>
+                    <div data-pay="Cheque Mixed" class="mt-3">
+                        <div class="cheque-head">
+                            <div class="d-flex align-items-end gap-2">
+                                <div><label class="form-label">تعداد چک</label><input class="form-control text-center" id="chequeCount" type="number" min="0" max="48" value="@Model.Cheques.Count" style="width:90px" /></div>
+                                <button type="button" class="btn btn-soft btn-sm mb-1" id="chequeSplit" title="تقسیم مبلغ چکی به‌طور مساوی بین چک‌ها"><i class="bi bi-distribute-horizontal ic"></i>تقسیم مساوی</button>
+                            </div>
+                            <div class="cheque-sum" id="chequeSum"></div>
+                        </div>
+                        <div class="table-responsive mt-2">
+                            <table class="table a-table cheque-table mb-0">
+                                <thead><tr><th style="width:40px">#</th><th style="min-width:140px">مبلغ (ریال)</th><th style="min-width:135px">سررسید</th><th style="min-width:130px">شماره چک / صیادی</th><th style="min-width:90px">بانک</th><th style="width:44px"></th></tr></thead>
+                                <tbody id="chequeRows">
+                                    @for (var i = 0; i < Model.Cheques.Count; i++)
+                                    {
+                                        var c = Model.Cheques[i];
+                                        <tr class="cheque-row" data-manual="1">
+                                            <td class="text-muted" data-idx>@(i + 1)</td>
+                                            <td><input class="form-control num" data-c="Amount" value="@c.Amount.ToString("0")" data-money /></td>
+                                            <td><input class="form-control ltr" data-c="DueDate" value="@c.DueDate" data-jdp autocomplete="off" placeholder="انتخاب تاریخ" /></td>
+                                            <td><input class="form-control ltr" data-c="Number" value="@c.Number" /></td>
+                                            <td><input class="form-control" data-c="Bank" value="@c.Bank" /></td>
+                                            <td><button type="button" class="btn btn-soft-danger btn-sm" data-cheque-remove title="حذف چک"><i class="bi bi-x-lg"></i></button></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-muted small mt-2" id="chequeEmpty">تعداد چک را وارد کنید تا ردیف هر چک با مبلغ و تاریخ سررسید ساخته شود.</div>
+                        <label class="form-label mt-3">توضیحات چک‌ها</label>
+                        <textarea class="form-control" asp-for="ChequeDetails" rows="2" placeholder="مثلاً نام صاحب حساب، ضامن ..."></textarea>
+                    </div>
                 </div>
             </div>
-            <div class="a-card a-card-body">
+        </div>
+
+        <div class="col-lg-4">
+            <div class="a-card a-card-body h-100">
                 <div class="row g-2 mb-3">
                     <div class="col-6"><label class="form-label">تخفیف کل (ریال)</label><input class="form-control num" asp-for="ExtraDiscount" type="text" data-money data-calc /></div>
                     <div class="col-6"><label class="form-label">مالیات ٪</label><input class="form-control" asp-for="TaxPercent" type="text" inputmode="decimal" data-calc /></div>
@@ -103,16 +138,29 @@
 
 <template id="invRowTpl">
     <tr class="inv-row" data-locked="0">
-        <td class="position-relative">
+        <td class="text-center text-muted" data-idx></td>
+        <td>
             <input type="hidden" data-f="VariantId" />
             <input class="form-control" data-f="Description" autocomplete="off" placeholder="نام یا کد کالا را تایپ کنید..." />
-            <div class="dropdown-menu w-100 inv-suggest"></div>
         </td>
-        <td><input class="form-control" data-f="Quantity" value="1" inputmode="decimal" style="min-width:70px" /></td>
-        <td><input class="form-control" data-f="Unit" style="min-width:70px" /></td>
-        <td><input class="form-control num" data-f="UnitPrice" value="0" data-money style="min-width:120px" /></td>
-        <td><input class="form-control" data-f="DiscountPercent" value="0" inputmode="decimal" style="min-width:60px" /></td>
+        <td><input class="form-control" data-f="Quantity" value="1" inputmode="decimal" /></td>
+        <td><input class="form-control" data-f="Unit" /></td>
+        <td><input class="form-control num" data-f="UnitPrice" value="0" data-money /></td>
+        <td><input class="form-control" data-f="DiscountPercent" value="0" inputmode="decimal" /></td>
         <td class="num fw-bold" data-line>0</td>
         <td><button type="button" class="btn btn-soft-danger btn-sm" data-inv-remove title="حذف ردیف"><i class="bi bi-x-lg"></i></button></td>
     </tr>
 </template>
+
+<template id="chequeRowTpl">
+    <tr class="cheque-row">
+        <td class="text-muted" data-idx></td>
+        <td><input class="form-control num" data-c="Amount" value="0" data-money /></td>
+        <td><input class="form-control ltr" data-c="DueDate" data-jdp autocomplete="off" placeholder="انتخاب تاریخ" /></td>
+        <td><input class="form-control ltr" data-c="Number" /></td>
+        <td><input class="form-control" data-c="Bank" /></td>
+        <td><button type="button" class="btn btn-soft-danger btn-sm" data-cheque-remove title="حذف چک"><i class="bi bi-x-lg"></i></button></td>
+    </tr>
+</template>
+
+<div class="dropdown-menu inv-suggest" id="invSuggest" role="listbox"></div>

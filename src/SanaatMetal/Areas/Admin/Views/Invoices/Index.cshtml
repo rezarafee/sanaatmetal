@@ -17,8 +17,8 @@
         <div class="col-md-3"><input class="form-control" name="q" value="@ViewBag.Q" placeholder="شماره، خریدار، موبایل..." /></div>
         <div class="col-md-2"><select class="form-select" name="type"><option value="">همه انواع</option>@foreach (var t in Enum.GetValues<InvoiceType>()) { <option value="@t" selected="@(tp == t)">@t.DisplayName()</option> }</select></div>
         <div class="col-md-2"><select class="form-select" name="status"><option value="">همه وضعیت‌ها</option>@foreach (var s in Enum.GetValues<InvoiceStatus>()) { <option value="@s" selected="@(st == s)">@s.DisplayName()</option> }</select></div>
-        <div class="col-md-2"><input class="form-control ltr" name="from" value="@ViewBag.From" placeholder="از ۱۴۰۵/۰۱/۰۱" /></div>
-        <div class="col-md-2"><input class="form-control ltr" name="to" value="@ViewBag.To" placeholder="تا ۱۴۰۵/۱۲/۲۹" /></div>
+        <div class="col-md-2"><input class="form-control ltr" name="from" value="@ViewBag.From" placeholder="از تاریخ" data-jdp autocomplete="off" /></div>
+        <div class="col-md-2"><input class="form-control ltr" name="to" value="@ViewBag.To" placeholder="تا تاریخ" data-jdp autocomplete="off" /></div>
         <div class="col-md-1"><button class="btn btn-soft w-100"><i class="bi bi-search"></i></button></div>
     </form>
     <div class="table-responsive">

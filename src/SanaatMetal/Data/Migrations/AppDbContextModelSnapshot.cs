@@ -665,6 +665,43 @@ namespace SanaatMetal.Data.Migrations
                     b.ToTable("Invoices");
                 });
 
+            modelBuilder.Entity("SanaatMetal.Models.InvoiceCheque", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<string>("Bank")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Number")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DueDate");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("InvoiceCheques");
+                });
+
             modelBuilder.Entity("SanaatMetal.Models.InvoiceItem", b =>
                 {
                     b.Property<int>("Id")
@@ -1457,6 +1494,17 @@ namespace SanaatMetal.Data.Migrations
                     b.Navigation("Customer");
                 });
 
+            modelBuilder.Entity("SanaatMetal.Models.InvoiceCheque", b =>
+                {
+                    b.HasOne("SanaatMetal.Models.Invoice", "Invoice")
+                        .WithMany("Cheques")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+                });
+
             modelBuilder.Entity("SanaatMetal.Models.InvoiceItem", b =>
                 {
                     b.HasOne("SanaatMetal.Models.Invoice", "Invoice")
@@ -1580,6 +1628,8 @@ namespace SanaatMetal.Data.Migrations
 
             modelBuilder.Entity("SanaatMetal.Models.Invoice", b =>
                 {
+                    b.Navigation("Cheques");
+
                     b.Navigation("Items");
                 });
 

@@ -61,6 +61,19 @@
                 <div><b>نحوه پرداخت:</b> @Model.PaymentMethod.DisplayName()</div>
                 @if (showMoney && Model.CashAmount > 0) { <div>نقدی: @N(Model.CashAmount) ریال</div> }
                 @if (showMoney && Model.ChequeAmount > 0) { <div>چک: @N(Model.ChequeAmount) ریال @(Model.ChequeCount > 0 ? $"({N(Model.ChequeCount)} فقره)" : "") @(Model.ChequeDueDate.HasValue ? "— سررسید " + Fmt.FaDigits(Fmt.JalaliDateOnly(Model.ChequeDueDate)) : "")</div> }
+                @if (showMoney && Model.Cheques.Count > 0)
+                {
+                    <table class="table table-sm a-table mt-2 mb-2 cheque-list">
+                        <thead><tr><th>#</th><th>مبلغ (ریال)</th><th>سررسید</th><th>شماره چک</th><th>بانک</th></tr></thead>
+                        <tbody>
+                            @for (var ci = 0; ci < Model.Cheques.Count; ci++)
+                            {
+                                var ch = Model.Cheques[ci];
+                                <tr class="@(ch.DueDate.Date < Fmt.ToLocal(DateTime.UtcNow).Date ? "text-muted" : "")"><td>@N(ci + 1)</td><td class="num fw-bold">@N(ch.Amount)</td><td>@Fmt.FaDigits(Fmt.JalaliDateOnly(ch.DueDate))</td><td class="ltr">@ch.Number</td><td>@ch.Bank</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                }
                 @if (!string.IsNullOrEmpty(Model.ChequeDetails)) { <div class="text-muted">@Model.ChequeDetails</div> }
                 @if (!string.IsNullOrEmpty(Model.Notes)) { <div class="mt-2"><b>توضیحات:</b> @Model.Notes</div> }
                 <div class="text-muted mt-3">ثبت: @Model.CreatedByName — @D(Model.CreatedAt, true) @if (Model.UpdatedByName != null) { <br /><span>آخرین ویرایش: @Model.UpdatedByName — @D(Model.UpdatedAt, true)</span> }</div>

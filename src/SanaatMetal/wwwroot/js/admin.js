@@ -27,6 +27,19 @@
   }));
   $('.a-link.active')?.scrollIntoView({ block: 'center' });
 
+  /* ---------- Modals ----------
+     پنجره‌ها به body منتقل می‌شوند تا انیمیشن یا transform والدها آن‌ها را زیر پس‌زمینه تیره نبرد */
+  $$('.modal').forEach(m => { if (m.parentElement !== document.body && !m.parentElement.closest('form')) document.body.appendChild(m); });
+
+  /* ---------- Jalali date picker (همه فیلدهای data-jdp) ---------- */
+  if (window.jalaliDatepicker) {
+    jalaliDatepicker.startWatch({
+      zIndex: 2000, time: false, persianDigits: false, autoReadOnlyInput: false, hideAfterChange: true,
+      showTodayBtn: true, showEmptyBtn: true, showCloseBtn: true, useDropDownYears: true,
+      separatorChars: { date: '/' },
+    });
+  }
+
   /* ---------- Confirm dialogs ---------- */
   const modalEl = $('#confirmModal');
   let pending = null;
@@ -133,6 +146,7 @@
       row.dataset.locked = locked ? '1' : '0';
       ['UnitPrice', 'DiscountPercent'].forEach(f => { const el = row.querySelector(`[data-f="${f}"]`); el.readOnly = locked; el.classList.toggle('bg-body-tertiary', locked); });
     };
+    let grandTotal = 0, chequeHook = null;
     const calc = () => {
       let sub = 0, disc = 0;
       $$('.inv-row', body).forEach(r => {
@@ -150,6 +164,9 @@
       $('#tDisc').textContent = fmt(disc + extra);
       $('#tTax').textContent = fmt(tax);
       $('#tGrand').textContent = fmt(grand) + ' ریال';
+      grandTotal = Math.round(grand);
+      $$('.inv-row', body).forEach((r, i) => { const c = r.querySelector('[data-idx]'); if (c) c.textContent = nf.format(i + 1); });
+      chequeHook?.();
     };
     const addRow = () => {
       const node = tpl.content.firstElementChild.cloneNode(true);
@@ -168,46 +185,158 @@
     inv.addEventListener('input', calc);
     $$('.inv-row', body).forEach(r => { if (!canPrice && r.dataset.locked === '1') lockRow(r, true); });
 
-    // جستجوی محصول
-    let timer = null;
+    // جستجوی محصول: لیست پیشنهاد روی body و با موقعیت fixed نمایش داده می‌شود تا پشت جدول پنهان نشود
+    const menu = $('#invSuggest');
+    if (menu) document.body.appendChild(menu);
+    let timer = null, activeInput = null, activeIdx = -1;
+    const placeMenu = () => {
+      if (!activeInput || !menu.classList.contains('show')) return;
+      const r = activeInput.getBoundingClientRect();
+      const below = window.innerHeight - r.bottom, w = Math.max(r.width, 420);
+      menu.style.width = Math.min(w, window.innerWidth - 16) + 'px';
+      menu.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+      menu.style.left = 'auto';
+      if (below < 260 && r.top > below) { menu.style.top = 'auto'; menu.style.bottom = (window.innerHeight - r.top + 4) + 'px'; menu.style.maxHeight = Math.min(360, r.top - 16) + 'px'; }
+      else { menu.style.bottom = 'auto'; menu.style.top = (r.bottom + 4) + 'px'; menu.style.maxHeight = Math.min(360, below - 16) + 'px'; }
+    };
+    const hideMenu = () => { menu?.classList.remove('show'); activeIdx = -1; };
+    const highlight = i => {
+      const items = $$('[data-pick]', menu);
+      if (!items.length) return;
+      activeIdx = (i + items.length) % items.length;
+      items.forEach((x, k) => x.classList.toggle('active', k === activeIdx));
+      items[activeIdx].scrollIntoView({ block: 'nearest' });
+    };
+    window.addEventListener('scroll', placeMenu, true);
+    window.addEventListener('resize', placeMenu);
     body.addEventListener('input', e => {
       const input = e.target.closest('[data-f="Description"]');
-      if (!input) return;
+      if (!input || !menu) return;
       const row = input.closest('tr');
       row.querySelector('[data-f="VariantId"]').value = '';
       if (!canPrice) lockRow(row, false);
-      const menu = row.querySelector('.inv-suggest');
+      activeInput = input;
       clearTimeout(timer);
       const q = input.value.trim();
-      if (q.length < 2) { menu.classList.remove('show'); return; }
+      if (q.length < 2) { hideMenu(); return; }
       timer = setTimeout(async () => {
         const res = await fetch('/admin/invoices/variants?q=' + encodeURIComponent(q), { headers: { Accept: 'application/json' } });
-        if (!res.ok) return;
+        if (!res.ok || activeInput !== input) return;
         const list = await res.json();
-        menu.innerHTML = list.length ? list.map(x => `<button type="button" class="dropdown-item d-flex justify-content-between gap-3" data-pick='${esc(JSON.stringify(x))}'>
-            <span class="text-truncate">${esc(x.text)} <small class="text-muted">${esc(x.code)}</small></span><span class="num text-muted small">${x.price ? fmt(x.price) : ''}</span></button>`).join('')
-          : '<span class="dropdown-item-text text-muted small">کالایی یافت نشد — به‌صورت آزاد ثبت می‌شود</span>';
+        menu.innerHTML = list.length ? list.map(x => `<button type="button" class="dropdown-item" data-pick='${esc(JSON.stringify(x))}'>
+            <span class="sug-title">${esc(x.text)}</span><span class="sug-meta"><small class="text-muted ltr">${esc(x.code)}</small><span class="num">${x.price ? fmt(x.price) + ' ریال' : 'تماس بگیرید'}</span></span></button>`).join('')
+          : '<span class="dropdown-item-text text-muted small">کالایی یافت نشد؛ به‌صورت شرح آزاد ثبت می‌شود.</span>';
+        activeIdx = -1;
         menu.classList.add('show');
+        placeMenu();
       }, 250);
     });
-    body.addEventListener('click', e => {
+    body.addEventListener('keydown', e => {
+      if (!e.target.closest('[data-f="Description"]') || !menu?.classList.contains('show')) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); highlight(activeIdx + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(activeIdx - 1); }
+      else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); $$('[data-pick]', menu)[activeIdx]?.click(); }
+      else if (e.key === 'Escape') hideMenu();
+    });
+    menu?.addEventListener('mousedown', e => e.preventDefault());
+    menu?.addEventListener('click', e => {
       const b = e.target.closest('[data-pick]');
-      if (!b) return;
+      if (!b || !activeInput) return;
       const x = JSON.parse(b.dataset.pick);
-      const row = b.closest('tr');
+      const row = activeInput.closest('tr');
       const set = (f, v) => { row.querySelector(`[data-f="${f}"]`).value = v; };
       set('VariantId', x.id); set('Description', x.text); set('Unit', x.unit || '');
       set('UnitPrice', Number(x.price || 0).toLocaleString('en-US')); set('DiscountPercent', x.discount || 0);
       if (!canPrice) lockRow(row, true);
-      row.querySelector('.inv-suggest').classList.remove('show');
+      hideMenu();
       row.querySelector('[data-f="Quantity"]').focus();
       calc();
     });
-    document.addEventListener('click', e => { if (!e.target.closest('.inv-suggest') && !e.target.closest('[data-f="Description"]')) $$('.inv-suggest.show').forEach(m => m.classList.remove('show')); });
+    document.addEventListener('click', e => { if (!e.target.closest('#invSuggest') && !e.target.closest('[data-f="Description"]')) hideMenu(); });
+
+    // چک‌ها
+    const chequeBody = $('#chequeRows'), chequeTpl = $('#chequeRowTpl'), chequeCount = $('#chequeCount');
+    const jToday = () => {
+      const p = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+      const g = t => parseInt(p.find(x => x.type === t).value, 10);
+      return [g('year'), g('month'), g('day')];
+    };
+    const jParse = v => { const m = toEn(v).match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/); return m ? [+m[1], +m[2], +m[3]] : null; };
+    const jFmt = ([y, m, d]) => `${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
+    const jAddMonth = ([y, m, d], n = 1) => {
+      m += n; while (m > 12) { m -= 12; y++; }
+      const max = m <= 6 ? 31 : m <= 11 ? 30 : 29;
+      return [y, m, Math.min(d, max)];
+    };
+    const chequeTotal = () => {
+      const method = $('#payMethod')?.value;
+      if (method === '2') return grandTotal;
+      if (method === '3') return Math.max(0, grandTotal - Math.min(num(inv.CashAmount.value), grandTotal));
+      return 0;
+    };
+    const renumber = (tb) => $$('tr', tb).forEach((r, i) => { const c = r.querySelector('[data-idx]'); if (c) c.textContent = nf.format(i + 1); });
+    const splitEqual = (force) => {
+      const rows = $$('.cheque-row', chequeBody);
+      if (!rows.length) return;
+      if (!force && rows.some(r => r.dataset.manual === '1')) return;
+      const total = chequeTotal(), n = rows.length;
+      const part = Math.floor(total / n / 1000) * 1000;
+      rows.forEach((r, i) => {
+        const v = i === n - 1 ? total - part * (n - 1) : part;
+        r.querySelector('[data-c="Amount"]').value = v.toLocaleString('en-US');
+        if (force) delete r.dataset.manual;
+      });
+    };
+    const updateChequeSum = () => {
+      const el = $('#chequeSum');
+      if (!el) return;
+      const rows = $$('.cheque-row', chequeBody);
+      $('#chequeEmpty')?.classList.toggle('d-none', rows.length > 0);
+      if (!rows.length) { el.innerHTML = ''; return; }
+      const sum = rows.reduce((a, r) => a + num(r.querySelector('[data-c="Amount"]').value), 0);
+      const total = chequeTotal(), ok = sum === total;
+      el.className = 'cheque-sum ' + (ok ? 'ok' : 'bad');
+      el.innerHTML = `<i class="bi ${ok ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} ic"></i>جمع چک‌ها: <b class="num">${fmt(sum)}</b> از <b class="num">${fmt(total)}</b> ریال`;
+    };
+    const setChequeCount = n => {
+      n = Math.max(0, Math.min(48, n | 0));
+      let rows = $$('.cheque-row', chequeBody);
+      while (rows.length > n) rows.pop().remove();
+      while (rows.length < n) {
+        const node = chequeTpl.content.firstElementChild.cloneNode(true);
+        const prev = rows.length ? jParse(rows[rows.length - 1].querySelector('[data-c="DueDate"]').value) : null;
+        const base = prev || jParse($('#issueDate')?.value || '') || jToday();
+        node.querySelector('[data-c="DueDate"]').value = jFmt(jAddMonth(base, 1));
+        chequeBody.appendChild(node);
+        rows.push(node);
+      }
+      renumber(chequeBody);
+      splitEqual(false);
+      updateChequeSum();
+    };
+    if (chequeBody) {
+      chequeHook = () => { splitEqual(false); updateChequeSum(); };
+      chequeCount.addEventListener('input', () => setChequeCount(num(chequeCount.value)));
+      $('#chequeSplit')?.addEventListener('click', () => { splitEqual(true); updateChequeSum(); });
+      chequeBody.addEventListener('input', e => { if (e.target.closest('[data-c="Amount"]')) e.target.closest('tr').dataset.manual = '1'; updateChequeSum(); });
+      chequeBody.addEventListener('click', e => {
+        const b = e.target.closest('[data-cheque-remove]');
+        if (!b) return;
+        b.closest('tr').remove();
+        chequeCount.value = $$('.cheque-row', chequeBody).length;
+        renumber(chequeBody); updateChequeSum();
+      });
+      $('#payMethod')?.addEventListener('change', () => {
+        if (['2', '3'].includes($('#payMethod').value) && !$$('.cheque-row', chequeBody).length) { chequeCount.value = 1; setChequeCount(1); }
+        splitEqual(false); updateChequeSum();
+      });
+    }
 
     // نام‌گذاری مجدد فیلدها قبل از ارسال
     inv.addEventListener('submit', () => {
       $$('.inv-row', body).forEach((r, i) => $$('[data-f]', r).forEach(el => { el.name = `Items[${i}].${el.dataset.f}`; }));
+      const useCheques = ['2', '3'].includes($('#payMethod')?.value);
+      $$('.cheque-row', chequeBody || document).forEach((r, i) => $$('[data-c]', r).forEach(el => { el.name = useCheques ? `Cheques[${i}].${el.dataset.c}` : ''; }));
     });
     calc();
   }

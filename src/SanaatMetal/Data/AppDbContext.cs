@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+    public DbSet<InvoiceCheque> InvoiceCheques => Set<InvoiceCheque>();
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
     public DbSet<SiteSettings> SiteSettings => Set<SiteSettings>();
@@ -60,6 +61,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         b.Entity<Invoice>().HasOne(x => x.Customer).WithMany(x => x.Invoices)
             .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.SetNull);
         b.Entity<InvoiceItem>().HasQueryFilter(x => !x.Invoice!.IsDeleted);
+        b.Entity<InvoiceCheque>().HasQueryFilter(x => !x.Invoice!.IsDeleted);
+        b.Entity<InvoiceCheque>().HasIndex(x => x.DueDate);
         b.Entity<InvoiceItem>().HasOne(x => x.Variant).WithMany()
             .HasForeignKey(x => x.VariantId).OnDelete(DeleteBehavior.SetNull);
 

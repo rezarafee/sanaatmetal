@@ -89,4 +89,4 @@ dotnet ef migrations add NameOfChange -p src/SanaatMetal -o Data/Migrations
 
 ## لایسنس کتابخانه‌ها
 - QuestPDF (ساخت PDF): لایسنس Community برای شرکت‌هایی با درآمد سالانه کمتر از یک میلیون دلار رایگان است.
-- ClosedXML، MailKit، Bootstrap، Swiper، Chart.js: MIT.
+- ClosedXML، MailKit، Bootstrap، Swiper، Chart.js، JalaliDatePicker (تقویم شمسی): MIT.

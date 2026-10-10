@@ -22,8 +22,8 @@
         <div class="d-flex flex-wrap gap-2 align-items-center">
             @if (f.Kind != "pricelist")
             {
-                <input class="form-control form-control-sm ltr" style="width:130px" name="from" value="@f.From" placeholder="از ۱۴۰۵/۰۱/۰۱" />
-                <input class="form-control form-control-sm ltr" style="width:130px" name="to" value="@f.To" placeholder="تا ۱۴۰۵/۱۲/۲۹" />
+                <input class="form-control form-control-sm ltr" style="width:130px" name="from" value="@f.From" placeholder="از تاریخ" data-jdp autocomplete="off" />
+                <input class="form-control form-control-sm ltr" style="width:130px" name="to" value="@f.To" placeholder="تا تاریخ" data-jdp autocomplete="off" />
             }
             @if (f.Kind is "sales" or "products" or "customers")
             {

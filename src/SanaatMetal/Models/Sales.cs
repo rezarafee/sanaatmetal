@@ -130,6 +130,7 @@ public class Invoice : Entity
     [MaxLength(150)] public string? DeletedByName { get; set; }
 
     public List<InvoiceItem> Items { get; set; } = new();
+    public List<InvoiceCheque> Cheques { get; set; } = new();
 
     [NotMapped] public decimal Profit => GrandTotal - TaxAmount - ShippingCost - CostTotal;
 }
@@ -149,5 +150,20 @@ public class InvoiceItem
     [Column(TypeName = "decimal(5,2)")] public decimal DiscountPercent { get; set; }
     [Column(TypeName = "decimal(18,0)")] public decimal DiscountAmount { get; set; }
     [Column(TypeName = "decimal(18,0)")] public decimal LineTotal { get; set; }
+    public int SortOrder { get; set; }
+}
+
+/// <summary>هر چک دریافتی فاکتور با مبلغ و سررسید جداگانه</summary>
+public class InvoiceCheque
+{
+    public int Id { get; set; }
+    public int InvoiceId { get; set; }
+    public Invoice? Invoice { get; set; }
+    [Column(TypeName = "decimal(18,0)")] public decimal Amount { get; set; }
+    /// <summary>تاریخ سررسید (تاریخ تقویمی، بدون ساعت)</summary>
+    public DateTime DueDate { get; set; }
+    /// <summary>شماره چک یا شناسه صیادی</summary>
+    [MaxLength(60)] public string? Number { get; set; }
+    [MaxLength(100)] public string? Bank { get; set; }
     public int SortOrder { get; set; }
 }

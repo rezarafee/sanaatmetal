@@ -17,6 +17,14 @@ public class InvoiceItemInput
     public decimal DiscountPercent { get; set; }
 }
 
+public class InvoiceChequeInput
+{
+    public decimal Amount { get; set; }
+    public string? DueDate { get; set; }
+    public string? Number { get; set; }
+    public string? Bank { get; set; }
+}
+
 public class InvoiceInput
 {
     public int Id { get; set; }
@@ -31,8 +39,6 @@ public class InvoiceInput
     public string? Address { get; set; }
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
     public decimal CashAmount { get; set; }
-    public int? ChequeCount { get; set; }
-    public string? ChequeDueDate { get; set; }
     public string? ChequeDetails { get; set; }
     public decimal ExtraDiscount { get; set; }
     public decimal TaxPercent { get; set; }
@@ -41,6 +47,7 @@ public class InvoiceInput
     public int? OrderId { get; set; }
     public string? Number { get; set; }
     public List<InvoiceItemInput> Items { get; set; } = new();
+    public List<InvoiceChequeInput> Cheques { get; set; } = new();
 }
 
 public class InvoicesController(AppDbContext db, InvoiceService invoices, SettingsService settings, ExportService export, AuditService audit) : AdminControllerBase
@@ -72,7 +79,7 @@ public class InvoicesController(AppDbContext db, InvoiceService invoices, Settin
     public async Task<IActionResult> Details(int id)
     {
         if (!CanList) return Forbid();
-        var inv = await db.Invoices.AsNoTracking().Include(i => i.Items.OrderBy(x => x.SortOrder)).FirstOrDefaultAsync(i => i.Id == id);
+        var inv = await db.Invoices.AsNoTracking().Include(i => i.Items.OrderBy(x => x.SortOrder)).Include(i => i.Cheques.OrderBy(x => x.SortOrder)).FirstOrDefaultAsync(i => i.Id == id);
         if (inv is null) return NotFound();
         ViewBag.Settings = await settings.GetAsync();
         return View(inv);
@@ -81,7 +88,7 @@ public class InvoicesController(AppDbContext db, InvoiceService invoices, Settin
     public async Task<IActionResult> Pdf(int id)
     {
         if (!CanList) return Forbid();
-        var inv = await db.Invoices.AsNoTracking().Include(i => i.Items).FirstOrDefaultAsync(i => i.Id == id);
+        var inv = await db.Invoices.AsNoTracking().Include(i => i.Items.OrderBy(x => x.SortOrder)).Include(i => i.Cheques.OrderBy(x => x.SortOrder)).FirstOrDefaultAsync(i => i.Id == id);
         if (inv is null) return NotFound();
         var bytes = export.InvoicePdf(inv, await settings.GetAsync());
         return File(bytes, "application/pdf", $"invoice-{inv.Number}.pdf");
@@ -114,18 +121,22 @@ public class InvoicesController(AppDbContext db, InvoiceService invoices, Settin
     [HasPermission(Permissions.InvoicesEdit)]
     public async Task<IActionResult> Edit(int id)
     {
-        var inv = await db.Invoices.AsNoTracking().Include(i => i.Items.OrderBy(x => x.SortOrder)).FirstOrDefaultAsync(i => i.Id == id);
+        var inv = await db.Invoices.AsNoTracking().Include(i => i.Items.OrderBy(x => x.SortOrder)).Include(i => i.Cheques.OrderBy(x => x.SortOrder)).FirstOrDefaultAsync(i => i.Id == id);
         if (inv is null) return NotFound();
         return View(new InvoiceInput
         {
             Id = inv.Id, Number = inv.Number, Type = inv.Type, Status = inv.Status, IssueDate = Fmt.JalaliDateOnly(Fmt.ToLocal(inv.IssueDate)),
             CustomerName = inv.CustomerName, CompanyName = inv.CompanyName, Mobile = inv.Mobile, EconomicCode = inv.EconomicCode,
             NationalId = inv.NationalId, Address = inv.Address, PaymentMethod = inv.PaymentMethod, CashAmount = inv.CashAmount,
-            ChequeCount = inv.ChequeCount, ChequeDueDate = Fmt.JalaliDateOnly(inv.ChequeDueDate), ChequeDetails = inv.ChequeDetails,
+            ChequeDetails = inv.ChequeDetails,
             ExtraDiscount = inv.ExtraDiscount, TaxPercent = inv.TaxPercent, ShippingCost = inv.ShippingCost, Notes = inv.Notes, OrderId = inv.OrderId,
             Items = inv.Items.Select(x => new InvoiceItemInput
             {
                 VariantId = x.VariantId, Description = x.Description, Unit = x.Unit, Quantity = x.Quantity, UnitPrice = x.UnitPrice, DiscountPercent = x.DiscountPercent,
+            }).ToList(),
+            Cheques = inv.Cheques.Select(c => new InvoiceChequeInput
+            {
+                Amount = c.Amount, DueDate = Fmt.JalaliDateOnly(c.DueDate), Number = c.Number, Bank = c.Bank,
             }).ToList(),
         });
     }
@@ -145,7 +156,7 @@ public class InvoicesController(AppDbContext db, InvoiceService invoices, Settin
 
         var inv = isNew
             ? new Invoice { CreatedByName = User.DisplayName() }
-            : await db.Invoices.Include(i => i.Items).FirstOrDefaultAsync(i => i.Id == input.Id);
+            : await db.Invoices.Include(i => i.Items).Include(i => i.Cheques).FirstOrDefaultAsync(i => i.Id == input.Id);
         if (inv is null) return NotFound();
 
         // اطلاعات قیمت سایزها از سرور
@@ -187,12 +198,33 @@ public class InvoicesController(AppDbContext db, InvoiceService invoices, Settin
         inv.IssueDate = Fmt.ToUtc(issue.Date.AddHours(12));
         inv.CustomerName = input.CustomerName.Trim(); inv.CompanyName = input.CompanyName?.Trim(); inv.Mobile = mobile;
         inv.EconomicCode = input.EconomicCode?.Trim(); inv.NationalId = input.NationalId?.Trim(); inv.Address = input.Address?.Trim();
-        inv.PaymentMethod = input.PaymentMethod; inv.CashAmount = input.CashAmount; inv.ChequeCount = input.ChequeCount;
-        inv.ChequeDueDate = Fmt.ParseJalali(input.ChequeDueDate); inv.ChequeDetails = input.ChequeDetails?.Trim();
+        inv.PaymentMethod = input.PaymentMethod; inv.CashAmount = input.CashAmount; inv.ChequeDetails = input.ChequeDetails?.Trim();
         inv.ExtraDiscount = input.ExtraDiscount; inv.TaxPercent = input.TaxPercent; inv.ShippingCost = input.ShippingCost;
         inv.Notes = input.Notes?.Trim(); inv.OrderId = input.OrderId;
         inv.Customer = await invoices.UpsertCustomerAsync(mobile, input.CustomerName, input.CompanyName, input.EconomicCode, input.NationalId, input.Address);
         InvoiceService.Recalculate(inv);
+
+        // چک‌ها: هر چک مبلغ و سررسید جدا دارد و جمع آن‌ها باید با مبلغ چکی فاکتور برابر باشد
+        db.InvoiceCheques.RemoveRange(inv.Cheques);
+        inv.Cheques = new List<InvoiceCheque>();
+        if (inv.PaymentMethod is PaymentMethod.Cheque or PaymentMethod.Mixed)
+        {
+            var rows = input.Cheques.Where(c => c.Amount > 0 || !string.IsNullOrWhiteSpace(c.DueDate) || !string.IsNullOrWhiteSpace(c.Number)).ToList();
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var c = rows[i];
+                var due = Fmt.ParseJalali(c.DueDate);
+                if (due is null) ModelState.AddModelError("", $"تاریخ سررسید چک {Fmt.FaDigits((i + 1).ToString())} را انتخاب کنید.");
+                if (c.Amount <= 0) ModelState.AddModelError("", $"مبلغ چک {Fmt.FaDigits((i + 1).ToString())} را وارد کنید.");
+                inv.Cheques.Add(new InvoiceCheque { Amount = Math.Max(0, c.Amount), DueDate = (due ?? DateTime.Today).Date, Number = c.Number?.Trim(), Bank = c.Bank?.Trim(), SortOrder = i });
+            }
+            var sum = inv.Cheques.Sum(c => c.Amount);
+            if (inv.Cheques.Count > 0 && sum != inv.ChequeAmount)
+                ModelState.AddModelError("", $"جمع مبلغ چک‌ها ({Fmt.FaDigits(sum.ToString("N0"))} ریال) با مبلغ چکی فاکتور ({Fmt.FaDigits(inv.ChequeAmount.ToString("N0"))} ریال) برابر نیست.");
+        }
+        inv.ChequeCount = inv.Cheques.Count > 0 ? inv.Cheques.Count : null;
+        inv.ChequeDueDate = inv.Cheques.Count > 0 ? inv.Cheques.Min(c => c.DueDate) : null;
+        if (!ModelState.IsValid) return View("Edit", input);
 
         if (isNew)
         {

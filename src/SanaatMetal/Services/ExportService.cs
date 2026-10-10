@@ -287,7 +287,25 @@ public class ExportService
                         {
                             c.Item().Text($"مبلغ چک: {Fmt.Number(inv.ChequeAmount)} {cur}" +
                                 (inv.ChequeCount > 0 ? $" ({Fmt.FaDigits(inv.ChequeCount.ToString())} فقره)" : ""));
-                            if (inv.ChequeDueDate.HasValue) c.Item().Text("سررسید: " + Fmt.FaDigits(Fmt.JalaliDateOnly(inv.ChequeDueDate)));
+                            if (inv.Cheques.Count > 0)
+                            {
+                                c.Item().PaddingTop(3).Table(t =>
+                                {
+                                    t.ColumnsDefinition(cd => { cd.ConstantColumn(18); cd.RelativeColumn(3); cd.RelativeColumn(2.2f); cd.RelativeColumn(2.6f); cd.RelativeColumn(2); });
+                                    foreach (var h in new[] { "#", "مبلغ", "سررسید", "شماره چک", "بانک" })
+                                        t.Cell().Background("#eef3f8").Padding(2).Text(h).FontSize(7.5f).Bold();
+                                    for (var i = 0; i < inv.Cheques.Count; i++)
+                                    {
+                                        var ch = inv.Cheques[i];
+                                        t.Cell().BorderBottom(0.5f).BorderColor("#dde5ee").Padding(2).Text(Fmt.FaDigits((i + 1).ToString())).FontSize(7.5f);
+                                        t.Cell().BorderBottom(0.5f).BorderColor("#dde5ee").Padding(2).Text(Fmt.Number(ch.Amount)).FontSize(7.5f);
+                                        t.Cell().BorderBottom(0.5f).BorderColor("#dde5ee").Padding(2).Text(Fmt.FaDigits(Fmt.JalaliDateOnly(ch.DueDate))).FontSize(7.5f);
+                                        t.Cell().BorderBottom(0.5f).BorderColor("#dde5ee").Padding(2).Text(Fmt.FaDigits(ch.Number ?? "")).FontSize(7.5f);
+                                        t.Cell().BorderBottom(0.5f).BorderColor("#dde5ee").Padding(2).Text(ch.Bank ?? "").FontSize(7.5f);
+                                    }
+                                });
+                            }
+                            else if (inv.ChequeDueDate.HasValue) c.Item().Text("سررسید: " + Fmt.FaDigits(Fmt.JalaliDateOnly(inv.ChequeDueDate)));
                             if (!string.IsNullOrEmpty(inv.ChequeDetails)) c.Item().Text(Fmt.FaDigits(inv.ChequeDetails));
                         }
                         if (!string.IsNullOrEmpty(inv.Notes)) c.Item().PaddingTop(6).Text("توضیحات: " + Fmt.FaDigits(inv.Notes));
