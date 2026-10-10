@@ -1,17 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Sanaat Metal"><title>Sanaat Metal</title><g transform="translate(0 0) scale(1.0)">
   <defs>
-    <linearGradient id="fbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1769aa"/><stop offset="1" stop-color="#0a2e52"/></linearGradient>
-    <linearGradient id="for" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb15c"/><stop offset="1" stop-color="#f07c22"/></linearGradient>
-    <linearGradient id="fst" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d6e2ef"/></linearGradient>
-    <mask id="fm"><rect width="64" height="64" fill="#fff"/><g fill="#000"><circle cx="48.81" cy="38.96" r="2.25"/><circle cx="38.96" cy="48.81" r="2.25"/><circle cx="25.04" cy="48.81" r="2.25"/><circle cx="15.19" cy="38.96" r="2.25"/><circle cx="15.19" cy="25.04" r="2.25"/><circle cx="25.04" cy="15.19" r="2.25"/><circle cx="38.96" cy="15.19" r="2.25"/><circle cx="48.81" cy="25.04" r="2.25"/></g></mask>
+    <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd24a"/><stop offset="1" stop-color="#f5b301"/></linearGradient>
+    <linearGradient id="fn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2c3fa0"/><stop offset="1" stop-color="#1f2f7a"/></linearGradient>
   </defs>
-  <rect width="64" height="64" rx="15" fill="url(#fbg)"/>
-  <path d="M0 15A15 15 0 0 1 15 0H49A15 15 0 0 1 64 15V22C44 14 20 14 0 26Z" fill="#fff" opacity=".07"/>
-  <circle cx="32" cy="32" r="23" fill="url(#fst)" mask="url(#fm)"/>
-  <circle cx="32" cy="32" r="23" fill="none" stroke="#0a2e52" stroke-opacity=".12" stroke-width="1"/>
-  <circle cx="32" cy="32" r="14.6" fill="none" stroke="#0a2e52" stroke-opacity=".16" stroke-width="1.2"/>
-  <circle cx="32" cy="32" r="12" fill="url(#for)"/>
-  <circle cx="32" cy="32" r="9" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".8"/>
-  <circle cx="32" cy="32" r="5.8" fill="#0a2e52"/>
-  <circle cx="32" cy="32" r="12" fill="none" stroke="#0a2e52" stroke-opacity=".18" stroke-width="1"/>
+  <circle cx="32" cy="32" r="31.4" fill="#fff"/>
+  <circle cx="32" cy="32" r="31.4" fill="none" stroke="#1f2f7a" stroke-opacity=".18" stroke-width="1"/>
+  <g fill="url(#fn)"><polygon points="9.36,43.08 4.85,43.78 3.37,39.52 7.36,37.29"/><polygon points="6.87,33.87 2.41,32.85 2.63,28.35 7.16,27.75"/><polygon points="7.97,24.40 4.22,21.79 6.09,17.69 10.52,18.82"/><polygon points="12.52,16.01 10.00,12.19 13.26,9.09 16.96,11.78"/><polygon points="19.86,9.92 18.94,5.44 23.12,3.76 25.55,7.64"/><polygon points="28.94,6.99 29.75,2.49 34.25,2.49 35.06,6.99"/><polygon points="38.45,7.64 40.88,3.76 45.06,5.44 44.14,9.92"/><polygon points="47.04,11.78 50.74,9.09 54.00,12.19 51.48,16.01"/><polygon points="53.48,18.82 57.91,17.69 59.78,21.79 56.03,24.40"/><polygon points="56.84,27.75 61.37,28.35 61.59,32.85 57.13,33.87"/><polygon points="56.64,37.29 60.63,39.52 59.15,43.78 54.64,43.08"/></g><path d="M11.91 43.60A23.2 23.2 0 1 1 52.09 43.60" fill="none" stroke="url(#fn)" stroke-width="4.4"/>
+  <path d="M18.5 33.2C18.5 24.6 24.4 18.6 32 18.6S45.5 24.6 45.5 33.2Z" fill="url(#fg)"/>
+  <path d="M29.6 18.9H34.4V33.2H29.6Z" fill="#d99200" opacity=".55"/>
+  <path d="M24.2 22.4C25.6 21 27.2 20.1 29 19.6V33.2H26C25.2 29.8 24.7 26 24.2 22.4Z" fill="#fff" opacity=".28"/>
+  <rect x="14.5" y="32.2" width="35" height="4.6" rx="2.3" fill="url(#fg)"/>
+  <rect x="14.5" y="35.2" width="35" height="1.6" rx=".8" fill="#d99200" opacity=".6"/>
+  <rect x="26.6" y="39" width="3.8" height="9.5" rx=".8" fill="url(#fn)"/><rect x="33.6" y="39" width="3.8" height="9.5" rx=".8" fill="url(#fn)"/>
+  
 </g></svg>

@@ -24,8 +24,8 @@
 <body>
     <aside class="a-side" id="aSide">
         <a class="a-brand" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
-            <span class="a-brand-logo"><img src="~/img/brand/logo-mark.svg" alt="" width="42" height="42" /></span>
-            <div><b>صنعت متال</b><small>پنل مدیریت</small></div>
+            <span class="a-brand-logo"><img src="~/img/brand/logo-mark.svg" alt="صنعت متال" width="42" height="42" /></span>
+            <div><b>صنعت متال</b><small><span class="a-wm"><b>S</b>anaat<b>M</b>etal</span> · پنل مدیریت</small></div>
         </a>
         <nav class="a-menu">
             @if (Can(Permissions.Dashboard))
@@ -118,7 +118,7 @@
             <button class="a-icon-btn d-lg-none" type="button" data-side-open aria-label="منو"><i class="bi bi-list fs-5"></i></button>
             <button class="a-icon-btn d-none d-lg-inline-grid" type="button" data-side-collapse aria-label="جمع کردن منو"><i class="bi bi-layout-sidebar-inset-reverse"></i></button>
             <h1 class="text-truncate">@ViewData["Title"]</h1>
-            <div class="me-auto d-flex gap-2 align-items-center">
+            <div class="ms-auto d-flex gap-3 align-items-center">
                 <span class="text-muted small d-none d-md-inline">@Fmt.Jalali(DateTime.UtcNow)</span>
                 <button class="a-icon-btn theme-toggle" type="button" title="تغییر تم" aria-label="تغییر تم"><i class="bi bi-moon-stars"></i><i class="bi bi-sun"></i></button>
             </div>

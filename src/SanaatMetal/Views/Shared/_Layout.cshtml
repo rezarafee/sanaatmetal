@@ -79,7 +79,7 @@
                     }
                 </span>
                 <span>
-                    <span class="sm-brand-name d-block">@company</span>
+                    @if (L.Code == "en") { <span class="sm-brand-name sm-wm d-block"><b>S</b>anaat<b>M</b>etal</span> } else { <span class="sm-brand-name d-block">@company</span> }
                     <span class="sm-brand-sub d-none d-sm-block d-lg-none d-xxl-block">@L.Pick(s.SloganFa, s.SloganEn)</span>
                 </span>
             </a>
@@ -132,7 +132,7 @@
                 <div class="col-lg-4">
                     <a class="sm-brand mb-3" href="/">
                         <span class="sm-brand-logo"><img src="~/img/brand/logo-mark.svg" alt="" width="44" height="44" /></span>
-                        <span class="sm-brand-name text-white">@company</span>
+                        @if (L.Code == "en") { <span class="sm-brand-name sm-wm text-white"><b>S</b>anaat<b>M</b>etal</span> } else { <span class="sm-brand-name text-white">@company</span> }
                     </a>
                     <p class="mt-3" style="line-height:2">@L.Pick(s.SloganFa, s.SloganEn)</p>
                     <div class="social mt-3">
