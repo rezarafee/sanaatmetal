@@ -92,12 +92,20 @@
                 <button class="btn btn-sm-primary btn-icon sm-cart-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#miniCart" aria-label="@L["Cart"]">
                     <i class="bi bi-bag"></i><span class="sm-cart-badge d-none">0</span>
                 </button>
-                <button class="navbar-toggler border-0 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="menu">
+                <button class="navbar-toggler border-0 px-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainNav" aria-controls="mainNav" aria-label="menu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
             </div>
 
-            <div class="collapse navbar-collapse" id="mainNav">
+            <div class="offcanvas offcanvas-start sm-menu" tabindex="-1" id="mainNav" aria-labelledby="mainNavLabel">
+                <div class="offcanvas-header">
+                    <span class="sm-brand" id="mainNavLabel">
+                        <span class="sm-brand-logo"><img src="@(string.IsNullOrEmpty(s.LogoPath) ? "/img/brand/logo-mark.svg" : s.LogoPath)" alt="" width="44" height="44" /></span>
+                        <span class="sm-brand-name">@company</span>
+                    </span>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body flex-grow-1">
                 <ul class="navbar-nav mx-auto">
                     <li class="nav-item"><a class="nav-link @Active("/")" href="/">@L["Home"]</a></li>
                     <li class="nav-item dropdown">
@@ -118,6 +126,7 @@
                         <button class="btn btn-sm-outline" type="submit" aria-label="@L["Search"]"><i class="bi bi-search"></i></button>
                     </div>
                 </form>
+                </div>
             </div>
         </div>
     </nav>

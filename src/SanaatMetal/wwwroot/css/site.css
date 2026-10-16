@@ -375,11 +375,23 @@ html[lang="en"] .sm-page-head h1 { font-family: var(--sm-font); font-weight: 900
 
 @media (max-width: 991.98px) {
   .sm-filter form { margin-bottom: .8rem !important; }
-  .sm-nav .nav-link::after { inset-inline: .9rem auto; width: 28px; bottom: 4px; }
   .sm-stats { margin-top: -50px; }
   .sm-section { padding: 3.5rem 0; }
   .sm-filter, .sm-gallery, .sm-summary { position: static; }
-  .sm-nav .navbar-collapse { padding: 1rem 0; }
+  /* Phone/tablet menu: full-height panel from the right; backdrop-filter would trap the fixed panel inside the navbar */
+  .sm-nav { backdrop-filter: none; background: var(--sm-surface); }
+  .sm-nav.menu-open { z-index: 1050; }
+  .sm-menu { width: min(86vw, 340px) !important; background: var(--sm-surface); color: var(--sm-text); }
+  .sm-menu .offcanvas-header { border-bottom: 1px solid var(--sm-border); padding: .9rem 1.1rem; justify-content: space-between; }
+  .sm-menu .offcanvas-header .btn-close { order: -1; margin: 0; }
+  html[dir="ltr"] .sm-menu .offcanvas-header .btn-close { order: 1; }
+  .sm-menu .offcanvas-body { display: flex; flex-direction: column; gap: 1rem; padding: 1rem 1.1rem calc(1rem + env(safe-area-inset-bottom)); }
+  .sm-menu .navbar-nav { margin: 0 !important; }
+  .sm-menu .nav-link { padding: .8rem .9rem !important; font-size: 1.02rem; border-radius: 10px; }
+  .sm-menu .nav-link.active { background: color-mix(in srgb, var(--sm-primary) 9%, transparent); }
+  .sm-menu .nav-link::after { display: none; }
+  .sm-menu .dropdown-menu { position: static !important; transform: none !important; box-shadow: none; border: 0; background: var(--sm-surface-2); margin: .2rem 0 .4rem; }
+  .sm-menu form { margin: 0 !important; }
 }
 @media (max-width: 575.98px) {
   .sm-hero .swiper { min-height: 560px; }
@@ -412,7 +424,7 @@ html[lang="en"] .sm-page-head h1 { font-family: var(--sm-font); font-weight: 900
   .sm-footer-bottom { padding-bottom: calc(64px + 1.2rem + env(safe-area-inset-bottom)); }
   body:not(:has(.sm-footer)) { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
   .sm-mbar {
-    display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; inset-inline: 0; bottom: 0; z-index: 1045;
+    display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; inset-inline: 0; bottom: 0; z-index: 1035;
     background: var(--sm-surface); border-top: 1px solid var(--sm-border); padding-bottom: env(safe-area-inset-bottom);
   }
   .sm-mbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 64px; font-size: .72rem; font-weight: 700; color: var(--sm-muted); position: relative; }
