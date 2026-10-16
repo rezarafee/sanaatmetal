@@ -197,6 +197,12 @@
             </div>
         </div>
     </div>
+    <nav class="sm-mbar" aria-label="@L["Products"]">
+        <a href="/products" class="@Active("/products")"><i class="bi bi-grid"></i>@L["Products"]</a>
+        <a href="/cart" class="@Active("/cart")"><i class="bi bi-bag"></i><span class="sm-cart-badge d-none">0</span>@L["Cart"]</a>
+        <a href="/contact" class="@Active("/contact")"><i class="bi bi-envelope"></i>@L["Contact"]</a>
+        @if (!string.IsNullOrEmpty(s.Phone)) { <a href="tel:@s.Phone" class="call"><i class="bi bi-telephone"></i>@L["CallShort"]</a> } else { <a href="/" class="@Active("/")"><i class="bi bi-house"></i>@L["Home"]</a> }
+    </nav>
     <button class="back-top" type="button" aria-label="top"><i class="bi bi-arrow-up"></i></button>
 
     <script src="~/lib/bootstrap/bootstrap.bundle.min.js"></script>

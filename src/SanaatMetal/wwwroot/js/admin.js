@@ -355,8 +355,8 @@
       Chart.defaults.color = muted;
       const ctx = $('#salesChart').getContext('2d');
       const grad = ctx.createLinearGradient(0, 0, 0, 300);
-      grad.addColorStop(0, 'rgba(37,99,235,.35)'); grad.addColorStop(1, 'rgba(37,99,235,0)');
-      const ds = [{ label: 'فروش', data: d.sales, borderColor: '#2563eb', backgroundColor: grad, fill: true, tension: .4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#2563eb' }];
+      grad.addColorStop(0, 'rgba(74,95,208,.35)'); grad.addColorStop(1, 'rgba(74,95,208,0)');
+      const ds = [{ label: 'فروش', data: d.sales, borderColor: '#4a5fd0', backgroundColor: grad, fill: true, tension: .4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#f5b301' }];
       if (d.profit) ds.push({ label: 'سود', data: d.profit, borderColor: '#10b981', backgroundColor: 'transparent', tension: .4, borderWidth: 2, borderDash: [6, 4], pointRadius: 3 });
       charts.push(new Chart(ctx, {
         type: 'line', data: { labels: d.labels, datasets: ds },
@@ -370,7 +370,7 @@
       const cash = (d.cash || []).reduce((a, b) => a + b, 0), cheque = (d.cheque || []).reduce((a, b) => a + b, 0);
       charts.push(new Chart($('#payChart'), {
         type: 'doughnut',
-        data: { labels: ['نقدی', 'چکی'], datasets: [{ data: [cash, cheque], backgroundColor: ['#10b981', '#f97316'], borderWidth: 0, hoverOffset: 10 }] },
+        data: { labels: ['نقدی', 'چکی'], datasets: [{ data: [cash, cheque], backgroundColor: ['#4a5fd0', '#f5b301'], borderWidth: 0, hoverOffset: 10 }] },
         options: { cutout: '68%', animation: { animateRotate: true, duration: 1400 }, plugins: { legend: { position: 'bottom' }, tooltip: { rtl: true, callbacks: { label: c => ` ${c.label}: ${fmt(c.raw)}` } } } },
       }));
     };

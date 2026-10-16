@@ -28,14 +28,6 @@
   onScroll();
   backTop && backTop.addEventListener('click', () => window.scrollTo({ top: 0 }));
 
-  /* ---------- Reveal on scroll ---------- */
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver(entries => entries.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-    }), { threshold: .12 });
-    document.querySelectorAll('.reveal').forEach((el, i) => { el.style.transitionDelay = (i % 4) * 80 + 'ms'; io.observe(el); });
-  } else document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
-
   /* ---------- Counters ---------- */
   document.querySelectorAll('[data-count]').forEach(el => {
     const target = +el.dataset.count || 0;
