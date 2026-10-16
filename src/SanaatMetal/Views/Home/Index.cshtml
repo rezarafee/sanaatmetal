@@ -14,20 +14,27 @@
             <div class="swiper-slide">
                 <div class="sm-hero-bg" style="background-image:url('/img/hero-bg.svg')"></div>
                 <div class="sm-hero-overlay"></div>
-                <div class="sm-hero-pattern"></div>
+                <div class="sm-hero-pattern bp"></div>
                 <div class="container sm-hero-content">
                     <div class="row w-100 align-items-center g-4">
                         <div class="col-lg-7">
                             <span class="sm-hero-chip anim-up"><i class="bi bi-shield-check"></i>@L["Why1"]</span>
                             <h1 class="my-3 anim-up d1">@heroTitle</h1>
                             <p class="mb-4 anim-up d2">@heroSub</p>
-                            <div class="d-flex flex-wrap gap-2 anim-up d3">
-                                <a href="/products" class="btn btn-sm-accent btn-lg px-4">@L["ViewProducts"] <i class="bi @arrow"></i></a>
-                                <a href="#contact" class="btn btn-sm-ghost btn-lg px-4"><i class="bi bi-chat-dots ic"></i>@L["RequestQuote"]</a>
+                            <form class="sm-hero-search anim-up d3" action="/products" method="get" role="search">
+                                <input type="search" name="q" placeholder="@L["SearchPlaceholder"]" aria-label="@L["Search"]" />
+                                <button class="btn btn-sm-accent" type="submit"><i class="bi bi-search ic"></i><span>@L["Search"]</span></button>
+                            </form>
+                            <div class="sm-hero-hints mt-2 d-flex flex-wrap gap-3 anim-up d3">
+                                <span>@L["HeroPopular"]</span>
+                                <a href="/products?q=@Uri.EscapeDataString(L["HeroQ1"])">@L["HeroQ1"]</a>
+                                <a href="/products?q=@Uri.EscapeDataString(L["HeroQ2"])">@L["HeroQ2"]</a>
+                                <a href="/products?q=@Uri.EscapeDataString(L["HeroQ3"])">@L["HeroQ3"]</a>
                             </div>
-                        </div>
-                        <div class="col-lg-5 d-none d-lg-block sm-hero-product anim-up d2">
-                            <img src="/img/demo/valve.svg" alt="" />
+                            <div class="d-flex flex-wrap gap-2 mt-4 anim-up d3">
+                                <a href="/products" class="btn btn-sm-ghost px-4">@L["ViewProducts"] <i class="bi @arrow"></i></a>
+                                <a href="#contact" class="btn btn-sm-ghost px-4"><i class="bi bi-chat-dots ic"></i>@L["RequestQuote"]</a>
+                            </div>
                         </div>
                     </div>
                 </div>
