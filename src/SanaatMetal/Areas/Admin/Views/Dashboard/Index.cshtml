@@ -11,10 +11,10 @@
     </div>
 </div>
 
-<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-xl-5">
+<div class="row g-3 mb-4 row-cols-2 row-cols-xl-5">
     @if (Can(Permissions.InvoicesView) || Can(Permissions.Reports))
     {
-        <div class="col"><div class="a-stat g-blue"><i class="bi bi-graph-up-arrow big"></i><small>فروش این ماه (@N(Model.InvoicesThisMonth) فاکتور)</small><div class="v num">@N(Model.SalesThisMonth)</div><small>ریال</small></div></div>
+        <div class="col-12 col-xl"><div class="a-stat g-blue"><i class="bi bi-graph-up-arrow big"></i><small>فروش این ماه (@N(Model.InvoicesThisMonth) فاکتور)</small><div class="v num">@N(Model.SalesThisMonth)</div><small>ریال</small></div></div>
         @if (Can(Permissions.PricingView))
         {
             <div class="col"><div class="a-stat g-green"><i class="bi bi-cash-coin big"></i><small>سود ناخالص این ماه</small><div class="v num">@N(Model.ProfitThisMonth)</div><small>ریال</small></div></div>

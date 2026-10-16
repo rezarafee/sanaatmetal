@@ -12,7 +12,7 @@
 
 <section class="sm-section pt-5">
     <div class="container">
-        <div class="row g-5">
+        <div class="row g-4 g-lg-5">
             <div class="col-lg-5">
                 <div class="sm-gallery">
                     <div class="swiper main">
@@ -72,10 +72,10 @@
                                 {
                                     var call = p.CallForPrice || v.CallForPrice || v.SalePrice is null;
                                     <tr data-row>
-                                        <td class="fw-bold" dir="ltr">@v.Size</td>
-                                        @if (p.Variants.Any(x => !string.IsNullOrEmpty(x.PressureClass))) { <td dir="ltr">@v.PressureClass</td> }
-                                        @if (p.Variants.Any(x => !string.IsNullOrEmpty(x.Schedule))) { <td dir="ltr">@v.Schedule</td> }
-                                        <td class="text-nowrap">
+                                        <td class="fw-bold v-size" dir="ltr">@v.Size</td>
+                                        @if (p.Variants.Any(x => !string.IsNullOrEmpty(x.PressureClass))) { <td class="v-meta" data-label="@L["Class"]" dir="ltr">@v.PressureClass</td> }
+                                        @if (p.Variants.Any(x => !string.IsNullOrEmpty(x.Schedule))) { <td class="v-meta" data-label="@L["Schedule"]" dir="ltr">@v.Schedule</td> }
+                                        <td class="text-nowrap v-price">
                                             @if (call)
                                             {
                                                 <span class="sm-call"><i class="bi bi-telephone-outbound"></i>@L["CallForPrice"]</span>
@@ -90,11 +90,11 @@
                                                 <span class="sm-price">@L.Num(v.FinalPrice) <small>@L["Currency"] / @v.Unit</small></span>
                                             }
                                         </td>
-                                        <td>
+                                        <td class="v-qty">
                                             <div class="qty-box"><button type="button" data-qty="1">+</button><input type="number" min="1" value="1" aria-label="@L["Quantity"]"><button type="button" data-qty="-1">−</button></div>
                                         </td>
-                                        <td class="text-end">
-                                            <button type="button" class="btn btn-sm btn-sm-primary text-nowrap" data-add-cart="@v.Id"><i class="bi bi-bag-plus ic"></i><span class="d-none d-md-inline">@(call ? L["RequestQuote"] : L["AddToCart"])</span></button>
+                                        <td class="text-end v-add">
+                                            <button type="button" class="btn btn-sm btn-sm-primary text-nowrap" data-add-cart="@v.Id"><i class="bi bi-bag-plus ic"></i><span class="v-add-label">@(call ? L["RequestQuote"] : L["AddToCart"])</span></button>
                                         </td>
                                     </tr>
                                 }

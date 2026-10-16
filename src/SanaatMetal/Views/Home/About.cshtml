@@ -6,7 +6,7 @@
 <partial name="_PageHead" model='(L["About"], L.Pick(Model.SloganFa, Model.SloganEn))' />
 <section class="sm-section">
     <div class="container">
-        <div class="row g-5 align-items-center">
+        <div class="row g-4 g-lg-5 align-items-center">
             <div class="col-lg-6 reveal">
                 <h2 class="sm-title mb-4">@L.Pick(Model.CompanyNameFa, Model.CompanyNameEn)</h2>
                 @foreach (var para in L.Pick(Model.AboutFa, Model.AboutEn).Split('\n', StringSplitOptions.RemoveEmptyEntries))

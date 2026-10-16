@@ -374,6 +374,8 @@ html[lang="en"] .sm-page-head h1 { font-family: var(--sm-font); font-weight: 900
 .dropdown-menu { border-radius: 14px; border-color: var(--sm-border); box-shadow: var(--sm-shadow); }
 
 @media (max-width: 991.98px) {
+  .sm-filter form { margin-bottom: .8rem !important; }
+  .sm-nav .nav-link::after { inset-inline: .9rem auto; width: 28px; bottom: 4px; }
   .sm-stats { margin-top: -50px; }
   .sm-section { padding: 3.5rem 0; }
   .sm-filter, .sm-gallery, .sm-summary { position: static; }
@@ -407,7 +409,8 @@ html[lang="en"] .sm-page-head h1 { font-family: var(--sm-font); font-weight: 900
 /* ---------- Mobile action bar ---------- */
 .sm-mbar { display: none; }
 @media (max-width: 767.98px) {
-  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .sm-footer-bottom { padding-bottom: calc(64px + 1.2rem + env(safe-area-inset-bottom)); }
+  body:not(:has(.sm-footer)) { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
   .sm-mbar {
     display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; inset-inline: 0; bottom: 0; z-index: 1045;
     background: var(--sm-surface); border-top: 1px solid var(--sm-border); padding-bottom: env(safe-area-inset-bottom);
@@ -416,9 +419,33 @@ html[lang="en"] .sm-page-head h1 { font-family: var(--sm-font); font-weight: 900
   .sm-mbar a i { font-size: 1.25rem; }
   .sm-mbar a.active { color: var(--sm-primary); }
   .sm-mbar a.call { color: var(--sm-on-accent); background: var(--sm-accent); }
-  .sm-mbar .sm-cart-badge { top: 6px; inset-inline-end: calc(50% - 22px); }
+  .sm-mbar .sm-cart-badge { top: 5px; inset-inline-end: calc(50% - 30px); }
   .back-top { bottom: calc(76px + env(safe-area-inset-bottom)); }
   .sm-toast { bottom: calc(76px + env(safe-area-inset-bottom)); }
   .sm-hero-pattern.bp::after { opacity: .22; inset-inline-end: -30%; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+.v-add-label { display: none; }
+@media (min-width: 768px) { .v-add-label { display: inline; } }
+
+/* Phones: size rows become stacked cards so price, quantity and add-to-cart stay on screen */
+@media (max-width: 575.98px) {
+  .sm-variants .table-responsive { overflow: visible; }
+  .sm-variants thead { display: none; }
+  .sm-variants tbody tr { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem .9rem; padding: .95rem 1rem; border-bottom: 1px solid var(--sm-border); }
+  .sm-variants tbody tr:last-child { border-bottom: 0; }
+  .sm-variants tbody td { border: 0; padding: 0; background: transparent; }
+  .sm-variants .v-size { font-size: 1.1rem; }
+  .sm-variants .v-meta { font-size: .85rem; color: var(--sm-muted); }
+  .sm-variants .v-meta::before { content: attr(data-label) " "; font-size: .75rem; }
+  .sm-variants .v-price { flex-basis: 100%; white-space: normal; }
+  .sm-variants .v-add { flex: 1; }
+  .sm-variants .v-add .btn { width: 100%; padding: .5rem .8rem; }
+  .sm-variants .v-add-label { display: inline; }
+  .sm-hero-search .btn .ic { margin: 0; }
+  .sm-hero-search .btn span { display: none; }
+  .sm-stat { gap: .7rem; }
+  .sm-stat-icon { width: 44px; height: 44px; border-radius: 12px; font-size: 1.2rem; }
+  .sm-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .sm-tabs .nav-link { white-space: nowrap; padding: .7rem .9rem; }
+}
