@@ -27,6 +27,11 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
   backTop && backTop.addEventListener('click', () => window.scrollTo({ top: 0 }));
+  const menu = document.getElementById('mainNav');
+  if (menu && nav) {
+    menu.addEventListener('show.bs.offcanvas', () => nav.classList.add('menu-open'));
+    menu.addEventListener('hidden.bs.offcanvas', () => nav.classList.remove('menu-open'));
+  }
 
   /* ---------- Counters ---------- */
   document.querySelectorAll('[data-count]').forEach(el => {
