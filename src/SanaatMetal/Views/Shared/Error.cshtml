@@ -4,7 +4,7 @@
     <div class="container text-center py-5">
         <div class="display-1 fw-black" style="color:var(--sm-primary)">@L.Num(Model)</div>
         <p class="lead text-muted my-4">@(Model == 404 ? L["NotFound"] : L["Error"])</p>
-        @if (ViewData["ErrorRef"] is string errRef) { <p class="small text-muted mb-4">کد پیگیری خطا: <b dir="ltr">@errRef</b></p> }
+        @if (ViewData["ErrorRef"] is string errRef) { <p class="small text-muted mb-4">کد پیگیری خطا: <b dir="ltr">@errRef</b><br /><span dir="ltr">@ViewData["Build"]</span><br />جزئیات: <a href="/diag" dir="ltr">/diag</a></p> }
         <a href="/" class="btn btn-sm-primary"><i class="bi bi-house ic"></i>@L["BackHome"]</a>
     </div>
 </section>
