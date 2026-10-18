@@ -140,7 +140,14 @@ public class HomeController(AppDbContext db, Lang lang, SettingsService settings
     [IgnoreAntiforgeryToken]
     public IActionResult Error(int? code)
     {
-        if (code is null) log.LogError("Unhandled error on {Path}", HttpContext.Request.Path);
+        if (code is null)
+        {
+            // کد پیگیری روی صفحه خطا نمایش داده می‌شود تا همان خطا در فایل لاگ پیدا شود
+            var feature = HttpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+            var refId = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+            log.LogError(feature?.Error, "Unhandled error [ref {Ref}] on {Method} {Path}", refId, Request.Method, feature?.Path ?? Request.Path.Value);
+            ViewData["ErrorRef"] = refId;
+        }
         Response.StatusCode = code ?? 500;
         return View("Error", code ?? 500);
     }

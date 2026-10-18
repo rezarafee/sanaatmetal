@@ -15,6 +15,23 @@ using SanaatMetal.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
+var root = builder.Environment.ContentRootPath;
+
+// ---------- Log خطاها در فایل (logs/errors-تاریخ.log) ----------
+var logDir = WritableDir.Pick(config["Diagnostics:LogPath"], Path.Combine(root, "logs"), Path.Combine(root, "App_Data", "logs"));
+var fileLog = new FileLoggerProvider(logDir,
+    Enum.TryParse<LogLevel>(config["Diagnostics:LogLevel"], true, out var lvl) ? lvl : LogLevel.Warning);
+builder.Logging.AddProvider(fileLog);
+// هشدارهای بی‌خطر و تکراری در فایل لاگ نوشته نشوند تا خطاهای واقعی گم نشوند
+foreach (var noisy in new[] { "Microsoft.AspNetCore.Antiforgery", "Microsoft.AspNetCore.HttpsPolicy", "Microsoft.EntityFrameworkCore.Query",
+                              "Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager", "Microsoft.EntityFrameworkCore.Model.Validation" })
+    builder.Logging.AddFilter<FileLoggerProvider>(noisy, LogLevel.Error);
+
+// ---------- پوشه کلیدهای امنیتی (فرم‌ها، ورود و کوکی‌ها به آن نیاز دارند) ----------
+// اگر مسیر تنظیم‌شده روی هاست وجود نداشته باشد یا اجازه نوشتن نداشته باشد، صفحه‌های دارای فرم خطای ۵۰۰ می‌دهند؛
+// پس اولین پوشه قابل‌نوشتن انتخاب می‌شود.
+var configuredKeys = config["DataProtection:KeysPath"];
+var keysDir = WritableDir.Pick(configuredKeys, Path.Combine(root, "keys"), Path.Combine(root, "App_Data", "keys"));
 
 // ---------- Database (SQL Server؛ برای اجرای سریع محلی می‌توان Sqlite را انتخاب کرد) ----------
 var provider = config["Database:Provider"] ?? "SqlServer";
@@ -79,7 +96,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDataProtection()
     .SetApplicationName("SanaatMetal")
-    .PersistKeysToFileSystem(new DirectoryInfo(config["DataProtection:KeysPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "keys")));
+    .PersistKeysToFileSystem(new DirectoryInfo(keysDir));
 builder.Services.AddScoped<Lang>();
 builder.Services.AddScoped<SettingsService>();
 builder.Services.AddScoped<FileStorageService>();
@@ -127,17 +144,31 @@ builder.Services.AddHsts(o => { o.MaxAge = TimeSpan.FromDays(365); o.IncludeSubD
 
 var app = builder.Build();
 
-ExportService.EnsureFonts(app.Environment.ContentRootPath);
+var startLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+startLog.LogWarning("Site starting. Environment={Env}, ContentRoot={Root}, Logs={Logs}, Keys={Keys}, Database={Provider}",
+    app.Environment.EnvironmentName, root, logDir, keysDir, provider);
+if (!string.IsNullOrWhiteSpace(configuredKeys) && !string.Equals(Path.GetFullPath(configuredKeys), keysDir, StringComparison.OrdinalIgnoreCase))
+    startLog.LogError("DataProtection:KeysPath '{Configured}' is missing or not writable; using '{Used}' instead. Fix the path or remove it from appsettings.Production.json.",
+        configuredKeys, keysDir);
 
-using (var scope = app.Services.CreateScope())
+try
 {
+    ExportService.EnsureFonts(root);
+    using var scope = app.Services.CreateScope();
     await SeedData.InitializeAsync(scope.ServiceProvider, provider);
+}
+catch (Exception ex)
+{
+    startLog.LogCritical(ex, "Startup failed (database connection, migrations or seed). Check ConnectionStrings:DefaultConnection in appsettings.Production.json.");
+    throw;
 }
 
 app.UseForwardedHeaders();
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/error");
+    // Diagnostics:ShowDetailedErrors فقط برای عیب‌یابی موقت است؛ متن کامل خطا را به همه نشان می‌دهد و بعد از رفع مشکل باید false شود
+    if (config.GetValue<bool>("Diagnostics:ShowDetailedErrors")) app.UseDeveloperExceptionPage();
+    else app.UseExceptionHandler("/error");
     app.UseHsts();
     app.UseHttpsRedirection();
 }
