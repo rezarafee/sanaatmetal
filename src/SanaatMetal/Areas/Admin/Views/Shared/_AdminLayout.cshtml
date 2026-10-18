@@ -1,3 +1,4 @@
+@inject SanaatMetal.Services.SettingsService SiteSettingsSvc
 @{
     var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
     string Act(params string[] names) => names.Contains(controller, StringComparer.OrdinalIgnoreCase) ? "active" : "";
@@ -5,9 +6,10 @@
     var roles = string.Join("، ", Roles.All.Where(r => User.IsInRole(r)).Select(Roles.Title));
     int newOrders = ViewBag.NewOrders ?? 0;
     int unread = ViewBag.UnreadMessages ?? 0;
+    var fontPx = Math.Clamp((await SiteSettingsSvc.GetAsync()).AdminFontSize, 12, 18);
 }
 <!DOCTYPE html>
-<html lang="fa" dir="rtl" data-bs-theme="light">
+<html lang="fa" dir="rtl" data-bs-theme="light" style="font-size:@(fontPx)px">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

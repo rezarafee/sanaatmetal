@@ -48,13 +48,13 @@
     <div class="sm-topbar py-2 d-none d-md-block">
         <div class="container d-flex justify-content-between align-items-center">
             <div class="d-flex gap-4">
-                @if (!string.IsNullOrEmpty(s.Phone))
+                @foreach (var o in s.Offices().Where(o => !string.IsNullOrWhiteSpace(o.Phone)))
                 {
-                    <a href="tel:@s.Phone" dir="ltr"><i class="bi bi-telephone ic"></i>@s.Phone</a>
+                    <a href="tel:@o.Phone!.Replace(" ", "")" dir="ltr"><i class="bi bi-telephone ic"></i>@o.Phone</a>
                 }
                 @if (!string.IsNullOrEmpty(s.Email))
                 {
-                    <a href="mailto:@s.Email"><i class="bi bi-envelope ic"></i>@s.Email</a>
+                    <a href="mailto:@s.Email" class="d-none d-lg-inline"><i class="bi bi-envelope ic"></i>@s.Email</a>
                 }
                 @if (!string.IsNullOrEmpty(s.WorkingHoursFa))
                 {
@@ -168,8 +168,15 @@
                 <div class="col-lg-4">
                     <h5>@L["Contact"]</h5>
                     <ul>
-                        @if (!string.IsNullOrEmpty(s.AddressFa)) { <li><i class="bi bi-geo-alt text-warning ic"></i>@L.Pick(s.AddressFa, s.AddressEn)</li> }
-                        @if (!string.IsNullOrEmpty(s.Phone)) { <li><i class="bi bi-telephone text-warning ic"></i><a href="tel:@s.Phone" dir="ltr">@s.Phone</a></li> }
+                        @foreach (var o in s.Offices())
+                        {
+                            var ot = L.Pick(o.TitleFa, o.TitleEn);
+                            <li class="sm-foot-office">
+                                <b>@(string.IsNullOrWhiteSpace(ot) ? L["Office" + o.No] : ot)</b>
+                                @if (!string.IsNullOrWhiteSpace(o.AddressFa)) { <span><i class="bi bi-geo-alt text-warning ic"></i>@L.Pick(o.AddressFa, o.AddressEn)</span> }
+                                @if (!string.IsNullOrWhiteSpace(o.Phone)) { <span><i class="bi bi-telephone text-warning ic"></i><a href="tel:@o.Phone.Replace(" ", "")" dir="ltr">@o.Phone</a></span> }
+                            </li>
+                        }
                         @if (!string.IsNullOrEmpty(s.Mobile)) { <li><i class="bi bi-phone text-warning ic"></i><a href="tel:@s.Mobile" dir="ltr">@s.Mobile</a></li> }
                         @if (!string.IsNullOrEmpty(s.Email)) { <li><i class="bi bi-envelope text-warning ic"></i><a href="mailto:@s.Email">@s.Email</a></li> }
                     </ul>

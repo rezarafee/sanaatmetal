@@ -1285,6 +1285,14 @@ namespace SanaatMetal.Data.Migrations
                     b.Property<string>("AboutFa")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Address2En")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Address2Fa")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("AddressEn")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -1292,6 +1300,9 @@ namespace SanaatMetal.Data.Migrations
                     b.Property<string>("AddressFa")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("AdminFontSize")
+                        .HasColumnType("int");
 
                     b.Property<string>("CompanyNameEn")
                         .HasMaxLength(200)
@@ -1364,7 +1375,27 @@ namespace SanaatMetal.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("Office1TitleEn")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Office1TitleFa")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Office2TitleEn")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Office2TitleFa")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Phone")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Phone2")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 

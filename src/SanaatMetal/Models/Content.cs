@@ -37,6 +37,17 @@ public class ContactMessage : Entity
 /// <summary>تنظیمات سایت (یک ردیف)</summary>
 public class SiteSettings
 {
+    public record Office(int No, string? TitleFa, string? TitleEn, string? Phone, string? AddressFa, string? AddressEn);
+
+    /// <summary>دفترهایی که حداقل تلفن یا نشانی دارند</summary>
+    public IEnumerable<Office> Offices()
+    {
+        if (!string.IsNullOrWhiteSpace(Phone) || !string.IsNullOrWhiteSpace(AddressFa))
+            yield return new Office(1, Office1TitleFa, Office1TitleEn, Phone, AddressFa, AddressEn);
+        if (!string.IsNullOrWhiteSpace(Phone2) || !string.IsNullOrWhiteSpace(Address2Fa))
+            yield return new Office(2, Office2TitleFa, Office2TitleEn, Phone2, Address2Fa, Address2En);
+    }
+
     public int Id { get; set; }
     [MaxLength(200)] public string CompanyNameFa { get; set; } = "صنعت متال";
     [MaxLength(200)] public string? CompanyNameEn { get; set; } = "Sanaat Metal";
@@ -53,6 +64,16 @@ public class SiteSettings
     [MaxLength(200)] public string? Email { get; set; }
     [MaxLength(500)] public string? AddressFa { get; set; }
     [MaxLength(500)] public string? AddressEn { get; set; }
+    // دفتر اول از Phone و AddressFa/En استفاده می‌کند؛ دفتر دوم فیلدهای جداگانه دارد
+    [MaxLength(100)] public string? Office1TitleFa { get; set; }
+    [MaxLength(100)] public string? Office1TitleEn { get; set; }
+    [MaxLength(100)] public string? Office2TitleFa { get; set; }
+    [MaxLength(100)] public string? Office2TitleEn { get; set; }
+    [MaxLength(200)] public string? Phone2 { get; set; }
+    [MaxLength(500)] public string? Address2Fa { get; set; }
+    [MaxLength(500)] public string? Address2En { get; set; }
+    /// <summary>اندازه پایه فونت پنل مدیریت (پیکسل)</summary>
+    [Range(12, 18)] public int AdminFontSize { get; set; } = 14;
     [MaxLength(300)] public string? WorkingHoursFa { get; set; }
     [MaxLength(300)] public string? WorkingHoursEn { get; set; }
     [MaxLength(300)] public string? Instagram { get; set; }

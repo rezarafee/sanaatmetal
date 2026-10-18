@@ -275,3 +275,6 @@ jdp-container .jdp-btn-today, jdp-container .jdp-btn-close, jdp-container .jdp-b
   .a-stat .v { font-size: 1.25rem; margin-top: .25rem; }
   .a-stat small { font-size: .74rem; }
 }
+
+/* زیرعنوان داخل کارت تنظیمات */
+.a-subhead { font-weight: 800; font-size: .9rem; color: var(--a-muted); border-bottom: 1px dashed var(--a-border); padding-bottom: .4rem; margin-top: .3rem; }

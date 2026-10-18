@@ -7,18 +7,25 @@
                     <span class="sm-hero-chip mb-3"><i class="bi bi-envelope-paper"></i>@L["Contact"]</span>
                     <h2 class="sm-title display-6 mb-3">@L["ContactTitle"]</h2>
                     <p class="opacity-75 mb-4" style="line-height:2">@L["ContactSub"]</p>
-                    <ul class="list-unstyled sm-contact-info mb-0">
-                        @if (!string.IsNullOrEmpty(Model.Phone))
+                    <div class="sm-offices mb-3">
+                        @foreach (var o in Model.Offices())
                         {
-                            <li><i class="bi bi-telephone"></i><div><small class="opacity-75 d-block">@L["Phone"]</small><a class="text-white fw-bold" href="tel:@Model.Phone" dir="ltr">@Model.Phone</a></div></li>
+                            var t = L.Pick(o.TitleFa, o.TitleEn);
+                            <div class="sm-office">
+                                <div class="sm-office-title"><i class="bi bi-building"></i>@(string.IsNullOrWhiteSpace(t) ? L["Office" + o.No] : t)</div>
+                                @if (!string.IsNullOrWhiteSpace(o.AddressFa)) { <p class="sm-office-addr"><i class="bi bi-geo-alt"></i><span>@L.Pick(o.AddressFa, o.AddressEn)</span></p> }
+                                @if (!string.IsNullOrWhiteSpace(o.Phone)) { <a class="sm-office-tel" href="tel:@o.Phone.Replace(" ", "")" dir="ltr"><i class="bi bi-telephone"></i>@o.Phone</a> }
+                            </div>
+                        }
+                    </div>
+                    <ul class="list-unstyled sm-contact-info mb-0">
+                        @if (!string.IsNullOrEmpty(Model.Mobile))
+                        {
+                            <li><i class="bi bi-phone"></i><div><small class="opacity-75 d-block">@L["Mobile"]</small><a class="text-white fw-bold" href="tel:@Model.Mobile" dir="ltr">@Model.Mobile</a></div></li>
                         }
                         @if (!string.IsNullOrEmpty(Model.Email))
                         {
                             <li><i class="bi bi-envelope"></i><div><small class="opacity-75 d-block">@L["Email"]</small><a class="text-white fw-bold" href="mailto:@Model.Email">@Model.Email</a></div></li>
-                        }
-                        @if (!string.IsNullOrEmpty(Model.AddressFa))
-                        {
-                            <li><i class="bi bi-geo-alt"></i><div><small class="opacity-75 d-block">@L["Address"]</small><span class="fw-bold">@L.Pick(Model.AddressFa, Model.AddressEn)</span></div></li>
                         }
                     </ul>
                 </div>

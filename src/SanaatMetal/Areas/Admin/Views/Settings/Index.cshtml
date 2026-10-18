@@ -22,11 +22,21 @@
             <div class="a-card mb-4">
                 <div class="a-card-head"><h5><i class="bi bi-telephone ic text-success"></i>اطلاعات تماس و شبکه‌های اجتماعی</h5></div>
                 <div class="a-card-body row g-3">
+                    <div class="col-12"><div class="a-subhead"><i class="bi bi-building ic"></i>دفتر اول</div></div>
+                    <div class="col-md-4"><label class="form-label">عنوان (فارسی)</label><input class="form-control" asp-for="Office1TitleFa" placeholder="دفتر مرکزی" /></div>
+                    <div class="col-md-4"><label class="form-label">عنوان (انگلیسی)</label><input class="form-control ltr" asp-for="Office1TitleEn" placeholder="Head office" /></div>
                     <div class="col-md-4"><label class="form-label">تلفن</label><input class="form-control ltr" asp-for="Phone" /></div>
-                    <div class="col-md-4"><label class="form-label">موبایل</label><input class="form-control ltr" asp-for="Mobile" /></div>
-                    <div class="col-md-4"><label class="form-label">ایمیل عمومی</label><input class="form-control ltr" asp-for="Email" /></div>
                     <div class="col-md-6"><label class="form-label">نشانی (فارسی)</label><input class="form-control" asp-for="AddressFa" /></div>
                     <div class="col-md-6"><label class="form-label">نشانی (انگلیسی)</label><input class="form-control ltr" asp-for="AddressEn" /></div>
+                    <div class="col-12"><div class="a-subhead"><i class="bi bi-building ic"></i>دفتر دوم <small class="text-muted fw-normal">(اگر خالی بماند در سایت نمایش داده نمی‌شود)</small></div></div>
+                    <div class="col-md-4"><label class="form-label">عنوان (فارسی)</label><input class="form-control" asp-for="Office2TitleFa" placeholder="دفتر دوم" /></div>
+                    <div class="col-md-4"><label class="form-label">عنوان (انگلیسی)</label><input class="form-control ltr" asp-for="Office2TitleEn" placeholder="Second office" /></div>
+                    <div class="col-md-4"><label class="form-label">تلفن</label><input class="form-control ltr" asp-for="Phone2" /></div>
+                    <div class="col-md-6"><label class="form-label">نشانی (فارسی)</label><input class="form-control" asp-for="Address2Fa" /></div>
+                    <div class="col-md-6"><label class="form-label">نشانی (انگلیسی)</label><input class="form-control ltr" asp-for="Address2En" /></div>
+                    <div class="col-12"><div class="a-subhead"><i class="bi bi-chat-dots ic"></i>سایر راه‌های ارتباطی</div></div>
+                    <div class="col-md-6"><label class="form-label">موبایل</label><input class="form-control ltr" asp-for="Mobile" /></div>
+                    <div class="col-md-6"><label class="form-label">ایمیل عمومی</label><input class="form-control ltr" asp-for="Email" /></div>
                     <div class="col-md-6"><label class="form-label">ساعات کاری (فارسی)</label><input class="form-control" asp-for="WorkingHoursFa" /></div>
                     <div class="col-md-6"><label class="form-label">ساعات کاری (انگلیسی)</label><input class="form-control ltr" asp-for="WorkingHoursEn" /></div>
                     <div class="col-md-3"><label class="form-label">اینستاگرام</label><input class="form-control ltr" asp-for="Instagram" placeholder="https://" /></div>
@@ -37,6 +47,15 @@
             </div>
         </div>
         <div class="col-xl-4">
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-fonts ic text-primary"></i>ظاهر پنل مدیریت</h5></div>
+                <div class="a-card-body">
+                    <label class="form-label" for="AdminFontSize">اندازه فونت پنل: <b><span id="fsOut">@Model.AdminFontSize</span> پیکسل</b></label>
+                    <input type="range" class="form-range" min="12" max="18" step="1" asp-for="AdminFontSize" data-font-preview="#fsOut" />
+                    <div class="d-flex justify-content-between small text-muted"><span>کوچک (۱۲)</span><span>پیش‌فرض ۱۴</span><span>بزرگ (۱۸)</span></div>
+                    <div class="form-text">با جابه‌جا کردن، اندازه همین صفحه تغییر می‌کند؛ برای ماندگاری «ذخیره» را بزنید.</div>
+                </div>
+            </div>
             <div class="a-card a-card-body mb-4">
                 <label class="form-label">لوگو</label>
                 <img class="w-100 rounded-4 border p-2 mb-2" style="aspect-ratio:3/1;object-fit:contain" src="@(Model.LogoPath ?? "/favicon.svg")" data-preview-for="logo" alt="" />

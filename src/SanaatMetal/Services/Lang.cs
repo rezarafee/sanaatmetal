@@ -123,6 +123,8 @@ public class Lang
         ["ContactInvalid"] = ("لطفاً نام، ایمیل معتبر و متن درخواست را وارد کنید.", "Please enter your name, a valid email and your request."),
         ["TooMany"] = ("درخواست‌های زیادی ارسال شده است؛ لطفاً کمی بعد دوباره تلاش کنید.", "Too many requests; please try again shortly."),
         ["Address"] = ("نشانی", "Address"),
+        ["Office1"] = ("دفتر مرکزی", "Head office"),
+        ["Office2"] = ("دفتر دوم", "Second office"),
         ["WorkingHours"] = ("ساعات کاری", "Working hours"),
         ["QuickLinks"] = ("دسترسی سریع", "Quick links"),
         ["FollowUs"] = ("ما را دنبال کنید", "Follow us"),
