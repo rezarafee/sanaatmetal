@@ -8,3 +8,5 @@ appsettings.Production.json
 .vs/
 *.user
 keys/
+logs/
+App_Data/
