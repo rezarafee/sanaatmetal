@@ -147,6 +147,7 @@ public class HomeController(AppDbContext db, Lang lang, SettingsService settings
             var refId = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
             log.LogError(feature?.Error, "Unhandled error [ref {Ref}] on {Method} {Path}", refId, Request.Method, feature?.Path ?? Request.Path.Value);
             ViewData["ErrorRef"] = refId;
+            ViewData["Build"] = Diag.Build;
         }
         Response.StatusCode = code ?? 500;
         return View("Error", code ?? 500);

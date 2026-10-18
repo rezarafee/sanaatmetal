@@ -27,12 +27,32 @@ public static class WritableDir
         }
     }
 
-    /// <summary>اولین پوشه قابل‌نوشتن از میان گزینه‌ها؛ آخرین گزینه پوشه موقت سیستم است.</summary>
-    public static string Pick(params string?[] candidates)
+    /// <summary>اولین پوشه قابل‌نوشتن از میان گزینه‌ها، بعد پوشه موقت سیستم؛ اگر هیچ‌کدام نشد null.</summary>
+    public static string? Pick(params string?[] candidates)
     {
         foreach (var c in candidates)
             if (TryUse(c) is { } ok) return ok;
-        return TryUse(Path.Combine(Path.GetTempPath(), "SanaatMetal")) ?? Path.GetTempPath();
+        return TryUse(Path.Combine(Path.GetTempPath(), "SanaatMetal"));
+    }
+
+    /// <summary>
+    /// پوشه خصوصی داخل wwwroot برای هاست‌هایی که فقط wwwroot قابل نوشتن است.
+    /// درخواست‌های وب به این مسیر با PrivateDataMiddleware رد می‌شوند.
+    /// </summary>
+    public const string PrivateSegment = "_private";
+}
+
+/// <summary>هر درخواست به /_private (لاگ و کلیدها) را با 404 رد می‌کند تا از وب قابل دانلود نباشد.</summary>
+public sealed class PrivateDataMiddleware(RequestDelegate next)
+{
+    public Task InvokeAsync(HttpContext ctx)
+    {
+        if (ctx.Request.Path.StartsWithSegments("/" + WritableDir.PrivateSegment, StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+            return Task.CompletedTask;
+        }
+        return next(ctx);
     }
 }
 
@@ -47,9 +67,9 @@ public sealed class FileLoggerProvider : ILoggerProvider
     private readonly object _lock = new();
     private readonly ConcurrentDictionary<string, FileLogger> _loggers = new();
 
-    public FileLoggerProvider(string dir, LogLevel min)
+    public FileLoggerProvider(string? dir, LogLevel min)
     {
-        _dir = dir;
+        _dir = dir ?? Path.Combine(Path.GetTempPath(), "SanaatMetal");
         _min = min;
     }
 
@@ -60,22 +80,28 @@ public sealed class FileLoggerProvider : ILoggerProvider
     internal void Write(LogLevel level, string category, string message, Exception? ex)
     {
         if (level < _min) return;
+        if (level >= LogLevel.Error) Diag.Add(level.ToString(), category, message, ex);
         var sb = new StringBuilder();
         sb.Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")).Append(" [").Append(level).Append("] ").Append(category).AppendLine();
         sb.Append("  ").AppendLine(message);
         if (ex is not null) sb.AppendLine(ex.ToString());
         sb.AppendLine();
-        try
+        lock (_lock)
         {
-            lock (_lock)
+            // اگر پوشه اصلی قابل نوشتن نبود، پوشه موقت سیستم امتحان می‌شود؛ لاگ نباید خودش باعث خطای سایت شود
+            foreach (var dir in new[] { _dir, Path.Combine(Path.GetTempPath(), "SanaatMetal") })
             {
-                var file = Path.Combine(_dir, $"errors-{DateTime.Now:yyyy-MM-dd}.log");
-                File.AppendAllText(file, sb.ToString(), Encoding.UTF8);
+                try
+                {
+                    System.IO.Directory.CreateDirectory(dir);
+                    File.AppendAllText(Path.Combine(dir, $"errors-{DateTime.Now:yyyy-MM-dd}.log"), sb.ToString(), Encoding.UTF8);
+                    return;
+                }
+                catch (Exception e)
+                {
+                    Diag.LastLogWriteError = $"{dir}: {e.Message}";
+                }
             }
-        }
-        catch
-        {
-            // لاگ نباید خودش باعث خطای سایت شود
         }
     }
 

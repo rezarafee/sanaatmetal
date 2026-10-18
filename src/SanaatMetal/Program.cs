@@ -18,7 +18,9 @@ var config = builder.Configuration;
 var root = builder.Environment.ContentRootPath;
 
 // ---------- Log خطاها در فایل (logs/errors-تاریخ.log) ----------
-var logDir = WritableDir.Pick(config["Diagnostics:LogPath"], Path.Combine(root, "logs"), Path.Combine(root, "App_Data", "logs"));
+var webRoot = builder.Environment.WebRootPath ?? Path.Combine(root, "wwwroot");
+var privateRoot = Path.Combine(webRoot, WritableDir.PrivateSegment);   // برای هاست‌هایی که فقط wwwroot قابل نوشتن است
+var logDir = WritableDir.Pick(config["Diagnostics:LogPath"], Path.Combine(root, "logs"), Path.Combine(root, "App_Data", "logs"), Path.Combine(privateRoot, "logs"));
 var fileLog = new FileLoggerProvider(logDir,
     Enum.TryParse<LogLevel>(config["Diagnostics:LogLevel"], true, out var lvl) ? lvl : LogLevel.Warning);
 builder.Logging.AddProvider(fileLog);
@@ -31,7 +33,8 @@ foreach (var noisy in new[] { "Microsoft.AspNetCore.Antiforgery", "Microsoft.Asp
 // اگر مسیر تنظیم‌شده روی هاست وجود نداشته باشد یا اجازه نوشتن نداشته باشد، صفحه‌های دارای فرم خطای ۵۰۰ می‌دهند؛
 // پس اولین پوشه قابل‌نوشتن انتخاب می‌شود.
 var configuredKeys = config["DataProtection:KeysPath"];
-var keysDir = WritableDir.Pick(configuredKeys, Path.Combine(root, "keys"), Path.Combine(root, "App_Data", "keys"));
+var keysDir = WritableDir.Pick(configuredKeys, Path.Combine(root, "keys"), Path.Combine(root, "App_Data", "keys"), Path.Combine(privateRoot, "keys"));
+Diag.LogDir = logDir ?? "(none writable)"; Diag.KeysDir = keysDir ?? "(none writable: keys kept in memory)"; Diag.KeysConfigured = configuredKeys;
 
 // ---------- Database (SQL Server؛ برای اجرای سریع محلی می‌توان Sqlite را انتخاب کرد) ----------
 var provider = config["Database:Provider"] ?? "SqlServer";
@@ -94,9 +97,10 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 // ---------- App services ----------
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddDataProtection()
-    .SetApplicationName("SanaatMetal")
-    .PersistKeysToFileSystem(new DirectoryInfo(keysDir));
+var dp = builder.Services.AddDataProtection().SetApplicationName("SanaatMetal");
+if (keysDir is not null) dp.PersistKeysToFileSystem(new DirectoryInfo(keysDir));
+else builder.Services.Configure<Microsoft.AspNetCore.DataProtection.KeyManagement.KeyManagementOptions>(o => o.XmlRepository = new InMemoryXmlRepository());
+    // هیچ پوشه‌ای قابل نوشتن نیست: کلیدها فقط در حافظه (با ری‌استارت سایت، کاربران پنل دوباره وارد می‌شوند)
 builder.Services.AddScoped<Lang>();
 builder.Services.AddScoped<SettingsService>();
 builder.Services.AddScoped<FileStorageService>();
@@ -147,7 +151,9 @@ var app = builder.Build();
 var startLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
 startLog.LogWarning("Site starting. Environment={Env}, ContentRoot={Root}, Logs={Logs}, Keys={Keys}, Database={Provider}",
     app.Environment.EnvironmentName, root, logDir, keysDir, provider);
-if (!string.IsNullOrWhiteSpace(configuredKeys) && !string.Equals(Path.GetFullPath(configuredKeys), keysDir, StringComparison.OrdinalIgnoreCase))
+if (keysDir is null)
+    startLog.LogError("No writable folder for data-protection keys (tried keys, App_Data/keys, wwwroot/_private/keys, temp). Keys are kept in memory only.");
+else if (!string.IsNullOrWhiteSpace(configuredKeys) && !string.Equals(Path.GetFullPath(configuredKeys), keysDir, StringComparison.OrdinalIgnoreCase))
     startLog.LogError("DataProtection:KeysPath '{Configured}' is missing or not writable; using '{Used}' instead. Fix the path or remove it from appsettings.Production.json.",
         configuredKeys, keysDir);
 
@@ -175,12 +181,14 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/error/{0}");
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseRequestLocalization();
+app.UseMiddleware<PrivateDataMiddleware>();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapDiag();
 app.MapAreaControllerRoute("admin", "Admin", "admin/{controller=Dashboard}/{action=Index}/{id?}");
 app.MapControllers();
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
