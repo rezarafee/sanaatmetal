@@ -31,6 +31,14 @@
      پنجره‌ها به body منتقل می‌شوند تا انیمیشن یا transform والدها آن‌ها را زیر پس‌زمینه تیره نبرد */
   $$('.modal').forEach(m => { if (m.parentElement !== document.body && !m.parentElement.closest('form')) document.body.appendChild(m); });
 
+  /* ---------- پیش‌نمایش اندازه فونت پنل ---------- */
+  $$('input[data-font-preview]').forEach(r => {
+    const out = $(r.dataset.fontPreview);
+    const apply = () => { document.documentElement.style.fontSize = r.value + 'px'; if (out) out.textContent = r.value + 'px'; };
+    r.addEventListener('input', apply);
+    apply();
+  });
+
   /* ---------- Jalali date picker (همه فیلدهای data-jdp) ---------- */
   if (window.jalaliDatepicker) {
     jalaliDatepicker.startWatch({

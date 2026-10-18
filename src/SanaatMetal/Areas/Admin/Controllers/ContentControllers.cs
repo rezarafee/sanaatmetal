@@ -134,6 +134,7 @@ public class SettingsController(AppDbContext db, SettingsService settings, FileS
         var keepLogo = s.LogoPath;
         input.Id = s.Id;
         db.Entry(s).CurrentValues.SetValues(input);
+        s.AdminFontSize = Math.Clamp(s.AdminFontSize == 0 ? 14 : s.AdminFontSize, 12, 18);
         s.SmtpPasswordProtected = string.IsNullOrEmpty(smtpPassword) ? keepPassword : settings.Protect(smtpPassword);
         s.LogoPath = keepLogo;
         if (removeLogo) { files.Delete(s.LogoPath); s.LogoPath = null; }
