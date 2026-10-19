@@ -80,6 +80,15 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.AccessDeniedPath = "/admin/account/denied";
     o.ExpireTimeSpan = TimeSpan.FromHours(8);
     o.SlidingExpiration = true;
+    // اگر مهلت ورود هنگام ارسال فرم تمام شده باشد، بعد از ورود به همان صفحه فرم برگردد (نه آدرس POST که صفحه ندارد)
+    o.Events.OnRedirectToLogin = ctx =>
+    {
+        if (ctx.Request.Headers.XRequestedWith == "XMLHttpRequest") { ctx.Response.StatusCode = StatusCodes.Status401Unauthorized; return Task.CompletedTask; }
+        if (HttpMethods.IsPost(ctx.Request.Method))
+            ctx.RedirectUri = $"{o.LoginPath}?ReturnUrl={Uri.EscapeDataString(AdminErrorFilter.BackUrl(ctx.HttpContext))}";
+        ctx.Response.Redirect(ctx.RedirectUri);
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddAntiforgery(o =>
