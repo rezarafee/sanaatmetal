@@ -298,13 +298,25 @@ html[dir="ltr"] .sm-cat:hover .arrow { transform: rotate(45deg); }
 .ltr-input { direction: ltr; text-align: left; }
 
 /* ---------- Page header ---------- */
-.sm-page-head { background: var(--sm-navy); color: #fff; padding: 3rem 0 3.6rem; position: relative; overflow: hidden; }
+.sm-page-head { background: var(--sm-navy); color: #fff; padding: 2.2rem 0 2.5rem; position: relative; overflow: hidden; }
 .sm-page-head::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(143, 162, 255, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(143, 162, 255, .08) 1px, transparent 1px); background-size: 24px 24px; }
 .sm-page-head > .container { position: relative; z-index: 1; }
 .sm-page-head h1 { font-family: var(--sm-title); font-size: clamp(1.8rem, 3vw, 2.6rem); }
 html[lang="en"] .sm-page-head h1 { font-family: var(--sm-font); font-weight: 900; }
 .sm-page-head .breadcrumb { --bs-breadcrumb-divider-color: #9aa3cf; --bs-breadcrumb-item-active-color: #fff; margin: 0; }
 .sm-page-head .breadcrumb a { color: #c9cff0; }
+/* خط طلایی کوتاه زیر عنوان صفحه */
+.sm-page-head h1::after { content: ""; display: block; width: 2.25rem; height: 3px; border-radius: 3px; background: var(--sm-accent, #f5b301); margin-top: .55rem; }
+/* موبایل: کادر عنوان کم‌ارتفاع و جمع‌وجور، و فاصله کمتر تا محتوای زیرش */
+@media (max-width: 767.98px) {
+    .sm-page-head { padding: 1rem 0 1.15rem; }
+    .sm-page-head::after { background-size: 18px 18px; }
+    .sm-page-head .breadcrumb { font-size: .78rem; margin-bottom: .2rem !important; }
+    .sm-page-head h1 { font-size: 1.4rem; line-height: 1.45; margin-bottom: 0 !important; }
+    .sm-page-head h1::after { width: 1.75rem; height: 2px; margin-top: .4rem; }
+    .sm-page-head p { font-size: .85rem; margin-top: .45rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .sm-page-head + .sm-section { padding-top: 1.25rem !important; }
+}
 
 /* ---------- Products list ---------- */
 .sm-filter { background: var(--sm-surface); border: 1px solid var(--sm-border); border-radius: var(--sm-radius); padding: 1.3rem; position: sticky; top: 90px; }
