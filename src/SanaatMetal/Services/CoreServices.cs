@@ -35,8 +35,20 @@ public class SettingsService(AppDbContext db, IMemoryCache cache, IDataProtectio
 
 public enum UploadKind { Image, Document }
 
-public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageService> log)
+public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageService> log, IServiceScopeFactory scopes)
 {
+    // اگر یک بار نوشتن روی دیسک ممکن نشد، تا ری‌استارت برنامه فایل‌ها مستقیم در دیتابیس ذخیره می‌شوند
+    private static volatile bool _diskUnavailable;
+    public static bool DiskUnavailable => _diskUnavailable;
+
+    public static readonly Dictionary<string, string> ContentTypes = new()
+    {
+        [".jpg"] = "image/jpeg", [".jpeg"] = "image/jpeg", [".png"] = "image/png", [".webp"] = "image/webp",
+        [".pdf"] = "application/pdf", [".zip"] = "application/zip",
+        [".docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        [".xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    };
+
     private static readonly Dictionary<string, byte[][]> Signatures = new()
     {
         [".jpg"] = [[0xFF, 0xD8, 0xFF]],
@@ -76,21 +88,42 @@ public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageServ
 
         var safeFolder = string.Concat(folder.Where(char.IsLetterOrDigit));
         var rel = $"uploads/{safeFolder}/{DateTime.UtcNow:yyyy}/{DateTime.UtcNow:MM}";
-        var dir = System.IO.Path.Combine(env.WebRootPath, rel.Replace('/', System.IO.Path.DirectorySeparatorChar));
         var name = $"{Guid.NewGuid():N}{ext}";
+        var webPath = $"/{rel}/{name}";
+        if (!_diskUnavailable)
+        {
+            var dir = System.IO.Path.Combine(env.WebRootPath, rel.Replace('/', System.IO.Path.DirectorySeparatorChar));
+            try
+            {
+                Directory.CreateDirectory(dir);
+                await using (var fs = new FileStream(System.IO.Path.Combine(dir, name), FileMode.CreateNew))
+                    await file.CopyToAsync(fs);
+                return (webPath, null);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // روی هاست اشتراکی (Plesk) برنامه گاهی اجازه نوشتن در پوشه سایت را ندارد؛ فایل در دیتابیس ذخیره می‌شود
+                _diskUnavailable = true;
+                log.LogWarning(ex, "Upload folder not writable ({Dir}); storing uploads in the database from now on", dir);
+            }
+        }
+
         try
         {
-            Directory.CreateDirectory(dir);
-            await using (var fs = new FileStream(System.IO.Path.Combine(dir, name), FileMode.CreateNew))
-                await file.CopyToAsync(fs);
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+            // context جدا تا تغییرات ذخیره‌نشده صفحه فعلی همراه فایل ذخیره نشوند
+            using var scope = scopes.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.StoredFiles.Add(new StoredFile { Path = webPath, ContentType = ContentTypes.GetValueOrDefault(ext, "application/octet-stream"), Data = ms.ToArray(), Size = ms.Length });
+            await db.SaveChangesAsync();
+            return (webPath, null);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex)
         {
-            // روی هاست اشتراکی معمولاً یعنی پوشه wwwroot/uploads اجازه نوشتن ندارد
-            log.LogError(ex, "Saving upload failed in {Dir}", dir);
-            return (null, "ذخیره فایل روی هاست ممکن نشد. دسترسی نوشتن (Write) پوشه wwwroot/uploads را در Plesk بررسی کنید.");
+            log.LogError(ex, "Saving upload to the database failed: {Path}", webPath);
+            return (null, "ذخیره فایل ممکن نشد. دوباره تلاش کنید؛ اگر تکرار شد کد خطا را از صفحه /diag بفرستید.");
         }
-        return ($"/{rel}/{name}", null);
     }
 
     public void Delete(string? webPath)
@@ -98,10 +131,15 @@ public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageServ
         if (string.IsNullOrEmpty(webPath) || !webPath.StartsWith("/uploads/")) return;
         var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(env.WebRootPath, webPath.TrimStart('/')));
         var root = System.IO.Path.GetFullPath(System.IO.Path.Combine(env.WebRootPath, "uploads"));
-        if (!full.StartsWith(root) || !File.Exists(full)) return;
         // اگر فایل قدیمی حذف نشد، فقط در لاگ ثبت می‌شود و عملیات اصلی (مثلاً جایگزینی عکس) ادامه پیدا می‌کند
-        try { File.Delete(full); }
+        try { if (full.StartsWith(root) && File.Exists(full)) File.Delete(full); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { log.LogWarning(ex, "Deleting upload failed: {Path}", full); }
+        try
+        {
+            using var scope = scopes.CreateScope();
+            scope.ServiceProvider.GetRequiredService<AppDbContext>().StoredFiles.Where(f => f.Path == webPath).ExecuteDelete();
+        }
+        catch (Exception ex) { log.LogWarning(ex, "Deleting stored upload failed: {Path}", webPath); }
     }
 }
 

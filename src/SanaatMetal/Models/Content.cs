@@ -125,3 +125,17 @@ public class AuditLog
     [MaxLength(2000)] public string? Details { get; set; }
     [MaxLength(64)] public string? IpAddress { get; set; }
 }
+
+/// <summary>
+/// فایل بارگذاری‌شده که در دیتابیس نگه داشته می‌شود؛ برای هاست‌هایی که برنامه اجازه نوشتن در پوشه سایت را ندارد.
+/// با همان آدرس /uploads/... نمایش داده می‌شود.
+/// </summary>
+public class StoredFile
+{
+    public int Id { get; set; }
+    [Required, MaxLength(300)] public string Path { get; set; } = "";
+    [Required, MaxLength(100)] public string ContentType { get; set; } = "application/octet-stream";
+    public byte[] Data { get; set; } = [];
+    public long Size { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
