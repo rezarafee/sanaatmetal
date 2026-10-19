@@ -24,10 +24,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<SiteSettings> SiteSettings => Set<SiteSettings>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
+
+        b.Entity<StoredFile>().HasIndex(x => x.Path).IsUnique();
 
         b.Entity<Category>().HasIndex(x => x.Slug).IsUnique();
         b.Entity<Category>().HasOne(x => x.Parent).WithMany(x => x.Children)

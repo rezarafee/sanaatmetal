@@ -85,7 +85,8 @@ public static class Diag
             if (LastLogWriteError is not null) sb.AppendLine($"  last write error: {LastLogWriteError}");
             sb.AppendLine($"Keys folder:    {KeysDir}{(string.IsNullOrEmpty(KeysConfigured) ? "" : $"   (configured: {KeysConfigured})")}");
             sb.AppendLine($"  writable:     {(WritableDir.TryUse(KeysDir) is null ? "NO" : "yes")}");
-            sb.AppendLine($"uploads folder: {(WritableDir.TryUse(Path.Combine(env.WebRootPath ?? "", "uploads")) is null ? "NOT writable" : "writable")}");
+            sb.AppendLine($"uploads folder: {(WritableDir.TryUse(Path.Combine(env.WebRootPath ?? "", "uploads")) is null ? "NOT writable (new uploads are stored in the database)" : "writable")}");
+            sb.AppendLine($"  uploads mode: {(SanaatMetal.Services.FileStorageService.DiskUnavailable ? "database" : "disk (database if disk fails)")}");
             sb.AppendLine();
             sb.AppendLine("Checks");
             sb.AppendLine("------");
@@ -97,6 +98,7 @@ public static class Diag
                 sb.AppendLine($"Database connect:        {await CheckAsync(async () => await db.Database.CanConnectAsync() ? "connected" : "cannot connect")}");
                 sb.AppendLine($"Pending migrations:      {await CheckAsync(async () => { var p = (await db.Database.GetPendingMigrationsAsync()).ToList(); return p.Count == 0 ? "none" : string.Join(", ", p); })}");
                 sb.AppendLine($"Site settings row:       {await CheckAsync(async () => (await db.SiteSettings.AnyAsync()) ? "present" : "MISSING")}");
+                sb.AppendLine($"Files in database:       {await CheckAsync(async () => (await db.StoredFiles.CountAsync()).ToString())}");
             }
             sb.AppendLine();
             sb.AppendLine("Recent errors (newest first)");

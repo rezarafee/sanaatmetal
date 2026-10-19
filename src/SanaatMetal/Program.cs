@@ -198,6 +198,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapDiag();
+app.MapStoredUploads();
 app.MapAreaControllerRoute("admin", "Admin", "admin/{controller=Dashboard}/{action=Index}/{id?}");
 app.MapControllers();
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");

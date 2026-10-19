@@ -56,7 +56,7 @@ public sealed class AdminErrorFilter(ILogger<AdminErrorFilter> log, ITempDataDic
         BadHttpRequestException { StatusCode: StatusCodes.Status413PayloadTooLarge } or InvalidDataException
             => "حجم فایل‌های انتخاب‌شده بیشتر از حد مجاز است. فایل‌ها را کم‌حجم‌تر یا تعدادشان را کمتر کنید.",
         UnauthorizedAccessException or IOException
-            => "ذخیره یا حذف فایل روی هاست ممکن نشد. دسترسی نوشتن (Write) پوشه wwwroot/uploads را در Plesk بررسی کنید.",
+            => "ذخیره یا حذف فایل ممکن نشد. دوباره تلاش کنید؛ اگر تکرار شد کد پیگیری را بفرستید.",
         Microsoft.EntityFrameworkCore.DbUpdateException
             => "ذخیره در دیتابیس ممکن نشد. اطلاعات را بررسی کنید و دوباره تلاش کنید.",
         _ => "خطایی رخ داد و عملیات انجام نشد.",
