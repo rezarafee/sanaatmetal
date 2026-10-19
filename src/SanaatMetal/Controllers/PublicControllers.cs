@@ -150,6 +150,23 @@ public class HomeController(AppDbContext db, Lang lang, SettingsService settings
             ViewData["Build"] = Diag.Build;
         }
         Response.StatusCode = code ?? 500;
+        // خطای صفحه‌های پنل مدیریت در قالب پنل نمایش داده می‌شود، نه صفحه خطای سایت
+        var original = HttpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IStatusCodeReExecuteFeature>()?.OriginalPath
+            ?? HttpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>()?.Path;
+        if (original?.StartsWith("/admin", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            ViewData["Title"] = code switch { 404 or 405 => "این صفحه پیدا نشد", 413 => "حجم فایل زیاد است", _ => "عملیات انجام نشد" };
+            ViewData["Message"] = code switch
+            {
+                404 or 405 => "آدرس صفحه درست نیست یا مهلت ورود تمام شده بود. از داشبورد دوباره وارد همان بخش شوید.",
+                413 => "حجم فایل‌های انتخاب‌شده بیشتر از حد مجاز است. فایل‌ها را کم‌حجم‌تر یا تعدادشان را کمتر کنید.",
+                400 => "صفحه منقضی شده بود. صفحه قبل را دوباره باز کنید و تغییرات را دوباره ذخیره کنید.",
+                null => $"خطایی رخ داد و عملیات انجام نشد (کد پیگیری: {ViewData["ErrorRef"]}).",
+                _ => $"خطای {code}: عملیات انجام نشد.",
+            };
+            ViewData["Back"] = Infrastructure.AdminErrorFilter.BackUrl(HttpContext);
+            return View(Infrastructure.AdminErrorFilter.AdminErrorView);
+        }
         return View("Error", code ?? 500);
     }
 }

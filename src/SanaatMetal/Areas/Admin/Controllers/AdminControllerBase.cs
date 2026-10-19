@@ -6,7 +6,7 @@ using SanaatMetal.Security;
 
 namespace SanaatMetal.Areas.Admin.Controllers;
 
-[Area("Admin"), Authorize]
+[Area("Admin"), Authorize, TypeFilter(typeof(SanaatMetal.Infrastructure.AdminErrorFilter))]
 public abstract class AdminControllerBase : Controller
 {
     protected HashSet<string> Perms { get; private set; } = [];

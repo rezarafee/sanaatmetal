@@ -133,9 +133,9 @@
             </div>
             <form method="post" enctype="multipart/form-data" asp-action="UploadImages" asp-route-productId="@Model.Id" class="a-drop mt-3">
                 <i class="bi bi-cloud-arrow-up fs-2 d-block"></i>
-                <p class="mb-2">انتخاب تصاویر (JPG، PNG، WEBP — حداکثر ۵ مگابایت برای هر فایل)</p>
+                <p class="mb-2">انتخاب تصاویر (JPG، PNG، WEBP). عکس‌های بزرگ موبایل پیش از ارسال خودکار کوچک می‌شوند.</p>
                 <div class="d-flex flex-wrap gap-2 justify-content-center align-items-center">
-                    <input type="file" name="images" multiple accept=".jpg,.jpeg,.png,.webp" class="form-control" style="max-width:340px" required />
+                    <input type="file" name="images" multiple accept=".jpg,.jpeg,.png,.webp" data-img class="form-control" style="max-width:340px" required />
                     <div class="form-check"><input class="form-check-input" type="checkbox" name="showInSlider" value="true" id="sl" /><label class="form-check-label" for="sl">نمایش در اسلایدر صفحه اصلی</label></div>
                     <button class="btn btn-a"><i class="bi bi-upload ic"></i>بارگذاری</button>
                 </div>

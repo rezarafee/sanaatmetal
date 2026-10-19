@@ -59,7 +59,7 @@
             <div class="a-card a-card-body mb-4">
                 <label class="form-label">لوگو</label>
                 <img class="w-100 rounded-4 border p-2 mb-2" style="aspect-ratio:3/1;object-fit:contain" src="@(Model.LogoPath ?? "/favicon.svg")" data-preview-for="logo" alt="" />
-                <input type="file" class="form-control mb-2" name="logo" id="logo" accept=".jpg,.jpeg,.png,.webp" />
+                <input type="file" class="form-control mb-2" name="logo" id="logo" accept=".jpg,.jpeg,.png,.webp" data-img />
                 @if (Model.LogoPath != null) { <div class="form-check"><input class="form-check-input" type="checkbox" name="removeLogo" value="true" id="rl" /><label class="form-check-label small" for="rl">حذف لوگو</label></div> }
             </div>
             <div class="a-card mb-4">

@@ -28,7 +28,7 @@
             <div class="a-card a-card-body">
                 <label class="form-label">تصویر</label>
                 <img class="w-100 rounded-4 mb-2 border" style="aspect-ratio:4/3;object-fit:contain" src="@(Model.ImagePath ?? "/img/placeholder.svg")" data-preview-for="image" alt="" />
-                <input type="file" class="form-control mb-3" name="image" id="image" accept=".jpg,.jpeg,.png,.webp" />
+                <input type="file" class="form-control mb-3" name="image" id="image" accept=".jpg,.jpeg,.png,.webp" data-img />
                 <label class="form-label">آیکون (Bootstrap Icons)</label>
                 <input class="form-control ltr mb-3" asp-for="Icon" placeholder="bi-gear" />
                 <label class="form-label">ترتیب نمایش</label>

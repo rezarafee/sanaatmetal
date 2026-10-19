@@ -39,6 +39,43 @@
     apply();
   });
 
+  /* ---------- کوچک کردن عکس‌ها پیش از ارسال ----------
+     عکس‌های موبایل معمولاً چند مگابایت هستند؛ در مرورگر به حداکثر ۲۰۰۰ پیکسل کوچک می‌شوند تا از سقف حجم سرور و هاست رد نشوند */
+  const MAX_SIDE = 2000, SHRINK_OVER = 1.5 * 1024 * 1024, MAX_BYTES = 5 * 1024 * 1024;
+  const shrink = async (file) => {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size <= SHRINK_OVER || !window.createImageBitmap) return file;
+    try {
+      const bmp = await createImageBitmap(file);
+      const k = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      // PNG (مثل لوگو) به WEBP تبدیل می‌شود تا شفافیت حفظ شود
+      const type = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/webp';
+      const blob = await new Promise(r => c.toBlob(r, type, 0.85));
+      if (!blob || blob.size >= file.size) return file;
+      const name = file.name.replace(/\.[^.]+$/, '') + (type === 'image/jpeg' ? '.jpg' : '.webp');
+      return new File([blob], name, { type, lastModified: Date.now() });
+    } catch (e) { return file; }
+  };
+  $$('input[type=file][data-img]').forEach(inp => {
+    const form = inp.form;
+    let note = null;
+    inp.addEventListener('change', async () => {
+      if (!inp.files.length || !window.DataTransfer) return;
+      const btns = form ? $$('button:not([type=button])', form) : [];
+      btns.forEach(b => b.disabled = true);
+      note ??= inp.insertAdjacentElement('afterend', Object.assign(document.createElement('div'), { className: 'small mt-1 w-100' }));
+      note.className = 'small mt-1 w-100 text-muted'; note.textContent = 'در حال آماده‌سازی عکس‌ها...';
+      const dt = new DataTransfer(), tooBig = [];
+      for (const f of inp.files) { const out = await shrink(f); dt.items.add(out); if (out.size > MAX_BYTES) tooBig.push(f.name); }
+      inp.files = dt.files;
+      btns.forEach(b => b.disabled = false);
+      if (tooBig.length) { note.className = 'small mt-1 w-100 text-danger'; note.textContent = 'این فایل‌ها بیشتر از ۵ مگابایت هستند و پذیرفته نمی‌شوند: ' + tooBig.join('، '); }
+      else note.textContent = '';
+    });
+  });
+
   /* ---------- Jalali date picker (همه فیلدهای data-jdp) ---------- */
   if (window.jalaliDatepicker) {
     jalaliDatepicker.startWatch({

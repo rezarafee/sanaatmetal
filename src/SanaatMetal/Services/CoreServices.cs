@@ -35,7 +35,7 @@ public class SettingsService(AppDbContext db, IMemoryCache cache, IDataProtectio
 
 public enum UploadKind { Image, Document }
 
-public class FileStorageService(IWebHostEnvironment env)
+public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageService> log)
 {
     private static readonly Dictionary<string, byte[][]> Signatures = new()
     {
@@ -77,10 +77,19 @@ public class FileStorageService(IWebHostEnvironment env)
         var safeFolder = string.Concat(folder.Where(char.IsLetterOrDigit));
         var rel = $"uploads/{safeFolder}/{DateTime.UtcNow:yyyy}/{DateTime.UtcNow:MM}";
         var dir = System.IO.Path.Combine(env.WebRootPath, rel.Replace('/', System.IO.Path.DirectorySeparatorChar));
-        Directory.CreateDirectory(dir);
         var name = $"{Guid.NewGuid():N}{ext}";
-        await using (var fs = new FileStream(System.IO.Path.Combine(dir, name), FileMode.CreateNew))
-            await file.CopyToAsync(fs);
+        try
+        {
+            Directory.CreateDirectory(dir);
+            await using (var fs = new FileStream(System.IO.Path.Combine(dir, name), FileMode.CreateNew))
+                await file.CopyToAsync(fs);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // روی هاست اشتراکی معمولاً یعنی پوشه wwwroot/uploads اجازه نوشتن ندارد
+            log.LogError(ex, "Saving upload failed in {Dir}", dir);
+            return (null, "ذخیره فایل روی هاست ممکن نشد. دسترسی نوشتن (Write) پوشه wwwroot/uploads را در Plesk بررسی کنید.");
+        }
         return ($"/{rel}/{name}", null);
     }
 
@@ -89,7 +98,10 @@ public class FileStorageService(IWebHostEnvironment env)
         if (string.IsNullOrEmpty(webPath) || !webPath.StartsWith("/uploads/")) return;
         var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(env.WebRootPath, webPath.TrimStart('/')));
         var root = System.IO.Path.GetFullPath(System.IO.Path.Combine(env.WebRootPath, "uploads"));
-        if (full.StartsWith(root) && File.Exists(full)) File.Delete(full);
+        if (!full.StartsWith(root) || !File.Exists(full)) return;
+        // اگر فایل قدیمی حذف نشد، فقط در لاگ ثبت می‌شود و عملیات اصلی (مثلاً جایگزینی عکس) ادامه پیدا می‌کند
+        try { File.Delete(full); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { log.LogWarning(ex, "Deleting upload failed: {Path}", full); }
     }
 }
 
