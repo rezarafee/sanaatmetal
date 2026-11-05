@@ -6,7 +6,7 @@
     <div class="row g-3">
         <div class="col-md-6"><label class="form-label">نام کامل *</label><input class="form-control" asp-for="FullName" /></div>
         <div class="col-md-6"><label class="form-label">نام کاربری (انگلیسی) *</label><input class="form-control ltr" asp-for="UserName" autocomplete="off" /></div>
-        <div class="col-md-6"><label class="form-label">ایمیل *</label><input class="form-control ltr" asp-for="Email" /></div>
+        <div class="col-md-6"><label class="form-label">ایمیل *</label><input class="form-control ltr" asp-for="Email" readonly="@(!isSuper && Model.Id is not null)" /></div>
         <div class="col-md-6"><label class="form-label">موبایل</label><input class="form-control ltr" asp-for="PhoneNumber" /></div>
         <div class="col-md-6">
             <label class="form-label">نقش</label>
@@ -14,9 +14,23 @@
                 @foreach (var r in Roles.All.Where(r => isSuper || r != Roles.SuperAdmin)) { <option value="@r" selected="@(Model.Role == r)">@Roles.Title(r)</option> }
             </select>
         </div>
-        <div class="col-md-6"><label class="form-label">@(Model.Id is null ? "رمز عبور *" : "رمز عبور جدید (خالی = بدون تغییر)")</label><input type="password" class="form-control ltr" asp-for="Password" autocomplete="new-password" /></div>
+        @if (isSuper)
+        {
+            <div class="col-md-6"><label class="form-label">@(Model.Id is null ? "رمز عبور (خالی = ارسال لینک تعیین رمز به ایمیل)" : "رمز عبور جدید (خالی = بدون تغییر)")</label><input type="password" class="form-control ltr" asp-for="Password" autocomplete="new-password" /></div>
+        }
+        else
+        {
+            <div class="col-md-6 d-flex align-items-end"><div class="small text-muted"><i class="bi bi-shield-lock ic"></i>@(Model.Id is null ? "بعد از ذخیره، لینک تعیین رمز به ایمیل کاربر ارسال می‌شود." : "تعیین یا ریست رمز عبور و تغییر ایمیل فقط توسط مدیر کل انجام می‌شود.")</div></div>
+        }
         <div class="col-12"><div class="form-check form-switch"><input class="form-check-input" asp-for="IsActive" /><label class="form-check-label" asp-for="IsActive">حساب فعال است</label></div></div>
     </div>
-    <div class="alert alert-info small mt-3 mb-0"><i class="bi bi-info-circle ic"></i>دسترسی دقیق هر نقش از بخش «سطوح دسترسی» قابل تنظیم است. رمز عبور حداقل ۱۰ کاراکتر با حرف بزرگ، کوچک، عدد و نماد.</div>
+    <div class="alert alert-info small mt-3 mb-0"><i class="bi bi-info-circle ic"></i>دسترسی دقیق هر نقش از بخش «سطوح دسترسی» قابل تنظیم است. رمز عبور حداقل ۱۰ کاراکتر با حرف بزرگ، کوچک، عدد و نماد. تعیین و ریست رمز کاربران فقط توسط مدیر کل امکان‌پذیر است.</div>
     <div class="mt-3 d-flex gap-2"><button class="btn btn-a px-4"><i class="bi bi-check2 ic"></i>ذخیره</button><a asp-action="Index" class="btn btn-soft">انصراف</a></div>
 </form>
+@if (isSuper && Model.Id is not null)
+{
+    <form method="post" asp-action="SendResetLink" asp-route-id="@Model.Id" class="a-card a-card-body mt-3 d-flex flex-wrap gap-2 align-items-center" style="max-width:860px" data-confirm="لینک ریست رمز به ایمیل «@Model.Email» ارسال شود؟">
+        <span class="small"><i class="bi bi-envelope-at ic"></i>به‌جای تعیین مستقیم رمز، می‌توانید لینک ریست رمز (۲ ساعت اعتبار) را به ایمیل کاربر بفرستید.</span>
+        <button class="btn btn-soft ms-auto"><i class="bi bi-send ic"></i>ارسال لینک ریست رمز</button>
+    </form>
+}

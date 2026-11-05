@@ -66,6 +66,9 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(o =>
     .AddClaimsPrincipalFactory<AppClaimsFactory>()
     .AddErrorDescriber<PersianIdentityErrorDescriber>();
 
+// لینک بازیابی رمز عبور که با ایمیل فرستاده می‌شود ۲ ساعت اعتبار دارد و فقط یک بار قابل استفاده است
+builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromHours(2));
+
 // تغییر نقش یا غیرفعال‌سازی کاربر حداکثر بعد از ۵ دقیقه اعمال می‌شود
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(5));
 
@@ -74,7 +77,8 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.Cookie.Name = "sm.auth";
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Strict;
-    o.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    // روی سایت واقعی (HTTPS) کوکی ورود فقط روی اتصال امن ارسال می‌شود
+    o.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
     o.LoginPath = "/admin/account/login";
     o.LogoutPath = "/admin/account/logout";
     o.AccessDeniedPath = "/admin/account/denied";
@@ -95,6 +99,7 @@ builder.Services.AddAntiforgery(o =>
 {
     o.Cookie.Name = "sm.af";
     o.Cookie.HttpOnly = true;
+    o.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
     o.Cookie.SameSite = SameSiteMode.Strict;
     o.HeaderName = "X-CSRF-TOKEN";
 });
@@ -114,10 +119,16 @@ builder.Services.AddScoped<Lang>();
 builder.Services.AddScoped<SettingsService>();
 builder.Services.AddScoped<FileStorageService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<PasswordResetService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<PricingService>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<ExportService>();
+
+// متن فارسی در HTML به صورت خوانا (نه &#x...;) نوشته شود: صفحه‌ها سبک‌تر و برای موتور جستجو بهتر.
+// کاراکترهای خطرناک HTML (< > & " ') همچنان encode می‌شوند، پس محافظت XSS سر جایش است.
+builder.Services.Configure<Microsoft.Extensions.WebEncoders.WebEncoderOptions>(o =>
+    o.TextEncoderSettings = new System.Text.Encodings.Web.TextEncoderSettings(System.Text.Unicode.UnicodeRanges.All));
 
 builder.Services.AddControllersWithViews(o =>
 {
@@ -132,6 +143,9 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy("forms", ctx => RateLimitPartition.GetFixedWindowLimiter(
         ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(5), QueueLimit = 0 }));
+    o.AddPolicy("reset", ctx => RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(15), QueueLimit = 0 }));
     o.AddPolicy("login", ctx => RateLimitPartition.GetFixedWindowLimiter(
         ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(5), QueueLimit = 0 }));

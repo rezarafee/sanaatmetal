@@ -5,6 +5,41 @@
     var heroTitle = L.Pick(s.HeroTitleFa, s.HeroTitleEn);
     var heroSub = L.Pick(s.HeroSubtitleFa, s.HeroSubtitleEn);
     var arrow = L.IsFa ? "bi-arrow-left" : "bi-arrow-right";
+    ViewData["Description"] = heroSub is { Length: > 0 } ? heroSub : L.Pick(s.SloganFa, s.SloganEn);
+    var baseUrl = Seo.BaseUrl(Context);
+    var sameAs = new[] { s.Instagram, s.Telegram, s.WhatsApp, s.LinkedIn }.Select(Fmt.SafeUrl).Where(u => u.StartsWith("http")).ToArray();
+    var org = new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@graph"] = new object[]
+        {
+            new Dictionary<string, object?>
+            {
+                ["@type"] = "Organization", ["@id"] = baseUrl + "/#org",
+                ["name"] = L.Pick(s.CompanyNameFa, s.CompanyNameEn), ["alternateName"] = L.IsFa ? s.CompanyNameEn : s.CompanyNameFa,
+                ["url"] = baseUrl + "/", ["logo"] = baseUrl + "/img/brand/logo-mark-256.png",
+                ["description"] = L.Pick(s.SloganFa, s.SloganEn),
+                ["email"] = string.IsNullOrWhiteSpace(s.Email) ? null : s.Email,
+                ["telephone"] = string.IsNullOrWhiteSpace(s.Phone) ? null : s.Phone,
+                ["address"] = string.IsNullOrWhiteSpace(L.Pick(s.AddressFa, s.AddressEn)) ? null
+                    : new Dictionary<string, object?> { ["@type"] = "PostalAddress", ["streetAddress"] = L.Pick(s.AddressFa, s.AddressEn), ["addressCountry"] = "IR" },
+                ["sameAs"] = sameAs.Length > 0 ? sameAs : null,
+            },
+            new Dictionary<string, object?>
+            {
+                ["@type"] = "WebSite", ["@id"] = baseUrl + "/#website", ["url"] = baseUrl + "/",
+                ["name"] = L.Pick(s.CompanyNameFa, s.CompanyNameEn), ["inLanguage"] = L.IsFa ? "fa-IR" : "en-US",
+                ["publisher"] = new Dictionary<string, object?> { ["@id"] = baseUrl + "/#org" },
+                ["potentialAction"] = new Dictionary<string, object?>
+                {
+                    ["@type"] = "SearchAction", ["target"] = baseUrl + "/products?q={search_term_string}", ["query-input"] = "required name=search_term_string",
+                },
+            },
+        },
+    };
+}
+@section Head {
+    <!script type="application/ld+json">@Html.Raw(Seo.Json(org))</!script>
 }
 
 <!-- ===== Hero slider ===== -->
@@ -52,7 +87,7 @@
                                 <h1 class="my-3 anim-up d1">@slide.Title</h1>
                                 @if (!string.IsNullOrEmpty(slide.Subtitle)) { <p class="mb-4 anim-up d2">@slide.Subtitle</p> }
                                 <div class="d-flex flex-wrap gap-2 anim-up d3">
-                                    <a href="@slide.Url" class="btn btn-sm-accent btn-lg px-4">@L["Details"] <i class="bi @arrow"></i></a>
+                                    <a href="@Fmt.SafeUrl(slide.Url)" class="btn btn-sm-accent btn-lg px-4">@L["Details"] <i class="bi @arrow"></i></a>
                                     <a href="/products" class="btn btn-sm-ghost btn-lg px-4">@L["AllProducts"]</a>
                                 </div>
                             </div>
@@ -181,7 +216,7 @@
                             @{ var name = L.Pick(c.NameFa, c.NameEn); }
                             @if (!string.IsNullOrEmpty(c.Website))
                             {
-                                <a class="sm-client" href="@c.Website" target="_blank" rel="noopener nofollow" title="@name">
+                                <a class="sm-client" href="@Fmt.SafeUrl(c.Website)" target="_blank" rel="noopener nofollow" title="@name">
                                     @if (!string.IsNullOrEmpty(c.LogoPath)) { <img src="@c.LogoPath" alt="@name" loading="lazy" /> }
                                     <span>@name</span>
                                 </a>

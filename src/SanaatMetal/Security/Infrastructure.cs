@@ -40,8 +40,10 @@ public class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvironment
         h["Referrer-Policy"] = "strict-origin-when-cross-origin";
         h["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
         h["Cross-Origin-Opener-Policy"] = "same-origin";
+        h["X-Permitted-Cross-Domain-Policies"] = "none";
+        h.Remove("X-Powered-By");
         h["Content-Security-Policy"] = env.IsDevelopment() ? Csp : Csp + "; upgrade-insecure-requests";
-        if (ctx.Request.Path.StartsWithSegments("/admin"))
+        if (ctx.Request.Path.StartsWithSegments("/admin") || ctx.Request.Path.StartsWithSegments("/diag"))
         {
             h["Cache-Control"] = "no-store";
             h["X-Robots-Tag"] = "noindex, nofollow";

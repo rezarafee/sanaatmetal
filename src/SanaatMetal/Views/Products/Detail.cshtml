@@ -7,6 +7,49 @@
     ViewData["Crumb"] = (L["Products"], "/products");
     var images = p.Images.Count > 0 ? p.Images.Select(i => (i.FilePath, L.Pick(i.AltFa, i.AltEn))).ToList() : new() { ("/img/placeholder.svg", name) };
     var anyPrice = p.Variants.Any(v => !v.CallForPrice && !p.CallForPrice && v.SalePrice > 0);
+
+    // ---------- SEO: توضیح، تصویر Open Graph و داده ساختاریافته محصول ----------
+    var catName = p.Category is null ? null : L.Pick(p.Category.NameFa, p.Category.NameEn);
+    if (string.IsNullOrWhiteSpace(ViewData["Description"] as string))
+        ViewData["Description"] = L.Pick(p.DescriptionFa, p.DescriptionEn) is { Length: > 0 } longDesc ? longDesc : $"{name} {catName} {p.Standard}".Trim();
+    ViewData["OgType"] = "product";
+    if (p.Images.Count > 0) ViewData["OgImage"] = p.Images[0].FilePath;
+    var baseUrl = Seo.BaseUrl(Context);
+    var pageUrl = Seo.WithLang(baseUrl + Context.Request.Path.ToUriComponent(), L.Code);
+    var priced = p.CallForPrice ? new List<decimal>() : p.Variants.Where(v => !v.CallForPrice && v.FinalPrice > 0).Select(v => v.FinalPrice!.Value).ToList();
+    var settingsForLd = await SettingsSvc.GetAsync();
+    var currency = settingsForLd.CurrencyEn is { Length: 3 } cur ? cur.ToUpperInvariant() : "IRR";
+    var product = new Dictionary<string, object?>
+    {
+        ["@type"] = "Product",
+        ["name"] = name,
+        ["description"] = Seo.Describe(ViewData["Description"] as string, 500),
+        ["sku"] = p.Code,
+        ["image"] = p.Images.Count > 0 ? p.Images.Select(i => Seo.Abs(Context, i.FilePath)).ToArray() : null,
+        ["category"] = catName,
+        ["brand"] = string.IsNullOrWhiteSpace(p.Brand) ? null : new Dictionary<string, object?> { ["@type"] = "Brand", ["name"] = p.Brand },
+        ["material"] = p.Material is null ? null : L.Pick(p.Material.NameFa, p.Material.NameEn),
+        ["url"] = pageUrl,
+        ["offers"] = priced.Count == 0 ? null : new Dictionary<string, object?>
+        {
+            ["@type"] = "AggregateOffer", ["priceCurrency"] = currency, ["lowPrice"] = priced.Min(), ["highPrice"] = priced.Max(),
+            ["offerCount"] = priced.Count, ["availability"] = "https://schema.org/InStock", ["url"] = pageUrl,
+        },
+    };
+    var crumbs = new List<object> { new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = L["Home"], ["item"] = Seo.WithLang(baseUrl + "/", L.Code) } };
+    crumbs.Add(new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 2, ["name"] = L["Products"], ["item"] = Seo.WithLang(baseUrl + "/products", L.Code) });
+    if (p.Category is not null)
+        crumbs.Add(new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 3, ["name"] = catName, ["item"] = Seo.WithLang(baseUrl + "/products?cat=" + Uri.EscapeDataString(p.Category.Slug), L.Code) });
+    crumbs.Add(new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = crumbs.Count + 1, ["name"] = name, ["item"] = pageUrl });
+    var ld = new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@graph"] = new object[] { product, new Dictionary<string, object?> { ["@type"] = "BreadcrumbList", ["itemListElement"] = crumbs } },
+    };
+}
+@inject SettingsService SettingsSvc
+@section Head {
+    <!script type="application/ld+json">@Html.Raw(Seo.Json(ld))</!script>
 }
 <partial name="_PageHead" model="(name, (string?)null)" />
 

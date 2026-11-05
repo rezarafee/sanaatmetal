@@ -61,12 +61,23 @@ public static class Diag
     /// <summary>
     /// صفحه متنی /diag: نسخه برنامه، مسیرها، تست کلیدها، فرم‌ها و دیتابیس، و آخرین خطاها.
     /// رمز و رشته اتصال نمایش داده نمی‌شود. با "Diagnostics:DiagPage": false خاموش می‌شود.
+    /// چون مسیرهای سرور و متن خطاها را نشان می‌دهد، فقط برای سوپر ادمین واردشده باز است؛
+    /// اگر ورود به پنل ممکن نیست، با تنظیم "Diagnostics:DiagKey" می‌توان آن را با /diag?key=همان‌مقدار باز کرد.
     /// </summary>
     public static void MapDiag(this WebApplication app)
     {
         app.MapGet("/diag", async (HttpContext ctx, IServiceProvider sp, IConfiguration config, IWebHostEnvironment env) =>
         {
             if (config["Diagnostics:DiagPage"] is "false" or "False") return Results.NotFound();
+            var key = config["Diagnostics:DiagKey"];
+            var keyOk = !string.IsNullOrWhiteSpace(key) && key.Length >= 12 &&
+                System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                    Encoding.UTF8.GetBytes(key), Encoding.UTF8.GetBytes(ctx.Request.Query["key"].ToString()));
+            if (!keyOk && !ctx.User.IsInRole(SanaatMetal.Security.Roles.SuperAdmin))
+            {
+                ctx.Response.Headers["X-Robots-Tag"] = "noindex, nofollow";
+                return Results.NotFound();
+            }
 
             var sb = new StringBuilder();
             sb.AppendLine("SanaatMetal diagnostics");
