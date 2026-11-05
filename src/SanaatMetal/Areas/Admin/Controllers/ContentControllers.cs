@@ -132,6 +132,15 @@ public class SettingsController(AppDbContext db, SettingsService settings, FileS
         if (s is null) { s = new SiteSettings(); db.SiteSettings.Add(s); }
         var keepPassword = s.SmtpPasswordProtected;
         var keepLogo = s.LogoPath;
+        var isSuper = User.IsInRole(Roles.SuperAdmin);
+        if (!isSuper)
+        {
+            // سرور ایمیل فقط توسط سوپر ادمین تغییر می‌کند؛ وگرنه کاربر دیگری می‌توانست ایمیل‌های بازیابی رمز را از سرور خودش عبور دهد
+            (input.SmtpHost, input.SmtpPort, input.SmtpUseSsl, input.SmtpUser, input.SmtpFrom, input.NotifyEmail) =
+                (s.SmtpHost, s.SmtpPort, s.SmtpUseSsl, s.SmtpUser, s.SmtpFrom, s.NotifyEmail);
+            smtpPassword = null;
+        }
+        input.SmtpPasswordProtected = keepPassword;
         input.Id = s.Id;
         db.Entry(s).CurrentValues.SetValues(input);
         s.AdminFontSize = Math.Clamp(s.AdminFontSize == 0 ? 14 : s.AdminFontSize, 12, 18);

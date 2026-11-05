@@ -1,5 +1,5 @@
 @model SiteSettings
-@{ ViewData["Title"] = "تنظیمات سایت"; }
+@{ ViewData["Title"] = "تنظیمات سایت"; var isSuper = User.IsInRole(Roles.SuperAdmin); }
 <form method="post" enctype="multipart/form-data">
     <input type="hidden" asp-for="Id" />
     <div class="row g-4">
@@ -75,7 +75,8 @@
             </div>
             <div class="a-card">
                 <div class="a-card-head"><h5><i class="bi bi-envelope-at ic text-danger"></i>سرور ایمیل (SMTP)</h5></div>
-                <div class="a-card-body row g-3">
+                <fieldset class="a-card-body row g-3 m-0" disabled="@(!isSuper)">
+                    @if (!isSuper) { <div class="col-12"><div class="alert alert-warning small mb-0"><i class="bi bi-shield-lock ic"></i>تنظیمات سرور ایمیل فقط توسط مدیر کل (سوپر ادمین) قابل تغییر است، چون لینک بازیابی رمز عبور از همین سرور ارسال می‌شود.</div></div> }
                     <div class="col-8"><label class="form-label">سرور</label><input class="form-control ltr" asp-for="SmtpHost" placeholder="mail.example.com" /></div>
                     <div class="col-4"><label class="form-label">پورت</label><input class="form-control ltr" asp-for="SmtpPort" type="number" /></div>
                     <div class="col-12"><label class="form-label">نام کاربری</label><input class="form-control ltr" asp-for="SmtpUser" autocomplete="off" /></div>
@@ -83,7 +84,7 @@
                     <div class="col-12"><label class="form-label">ایمیل فرستنده</label><input class="form-control ltr" asp-for="SmtpFrom" placeholder="noreply@example.com" /></div>
                     <div class="col-12"><label class="form-label">دریافت پیام‌ها و سفارش‌ها در ایمیل</label><input class="form-control ltr" asp-for="NotifyEmail" placeholder="sales@example.com" /></div>
                     <div class="col-12"><div class="form-check form-switch"><input class="form-check-input" asp-for="SmtpUseSsl" /><label class="form-check-label" asp-for="SmtpUseSsl">اتصال امن (SSL/TLS)</label></div></div>
-                </div>
+                </fieldset>
             </div>
         </div>
     </div>

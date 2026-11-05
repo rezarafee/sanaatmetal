@@ -1,6 +1,7 @@
 @model SiteSettings
 @{
     ViewData["Title"] = L["About"];
+    ViewData["Description"] = L.Pick(Model.AboutFa, Model.AboutEn) is { Length: > 0 } about ? about : L.Pick(Model.SloganFa, Model.SloganEn);
     List<Client> clients = ViewBag.Clients;
 }
 <partial name="_PageHead" model='(L["About"], L.Pick(Model.SloganFa, Model.SloganEn))' />

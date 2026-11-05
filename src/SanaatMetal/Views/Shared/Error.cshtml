@@ -1,5 +1,5 @@
 @model int
-@{ ViewData["Title"] = Model == 404 ? "404" : L["Error"]; }
+@{ ViewData["Title"] = Model == 404 ? "404" : L["Error"]; ViewData["Robots"] = "noindex, nofollow"; }
 <section class="sm-section">
     <div class="container text-center py-5">
         <div class="display-1 fw-black" style="color:var(--sm-primary)">@L.Num(Model)</div>

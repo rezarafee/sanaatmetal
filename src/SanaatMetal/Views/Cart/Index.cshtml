@@ -1,5 +1,5 @@
 @model CheckoutVm
-@{ ViewData["Title"] = L["Cart"]; }
+@{ ViewData["Title"] = L["Cart"]; ViewData["Robots"] = "noindex, nofollow"; }
 <partial name="_PageHead" model='(L["Cart"], (string?)null)' />
 <section class="sm-section pt-5" id="cart-page">
     <div class="container">

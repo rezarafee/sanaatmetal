@@ -55,6 +55,32 @@ public static class SeedData
             }
         }
 
+        // بازیابی اضطراری: اگر رمز سوپر ادمین فراموش شده و ایمیل (SMTP) هم کار نمی‌کند، روی هاست در appsettings.Production.json
+        // مقدار Seed:RecoverSuperAdminPassword را بگذارید، سایت را ری‌استارت کنید، وارد شوید و بلافاصله این مقدار را پاک کنید.
+        var recover = config["Seed:RecoverSuperAdminPassword"];
+        if (!string.IsNullOrWhiteSpace(recover))
+        {
+            var name = config["Seed:AdminUserName"] ?? "superadmin";
+            var su = await users.FindByNameAsync(name);
+            if (su is not null && await users.IsInRoleAsync(su, Roles.SuperAdmin))
+            {
+                var token = await users.GeneratePasswordResetTokenAsync(su);
+                var r = await users.ResetPasswordAsync(su, token, recover);
+                if (r.Succeeded)
+                {
+                    su.IsActive = true;
+                    await users.UpdateAsync(su);
+                    await users.SetLockoutEndDateAsync(su, null);
+                    await users.ResetAccessFailedCountAsync(su);
+                    db.AuditLogs.Add(new AuditLog { Action = "بازیابی اضطراری رمز سوپر ادمین از تنظیمات هاست", EntityName = "User", EntityId = su.Id, UserName = su.FullName });
+                    await db.SaveChangesAsync();
+                    log.LogWarning("Super admin '{User}' password was reset from Seed:RecoverSuperAdminPassword. REMOVE this setting now.", name);
+                }
+                else log.LogError("Seed:RecoverSuperAdminPassword failed: {Errors}", string.Join("; ", r.Errors.Select(e => e.Description)));
+            }
+            else log.LogError("Seed:RecoverSuperAdminPassword is set but super admin user '{User}' was not found.", name);
+        }
+
         if (!await db.SiteSettings.AnyAsync())
         {
             db.SiteSettings.Add(new SiteSettings

@@ -29,7 +29,7 @@ public class UserRow
 }
 
 [HasPermission(Permissions.Users)]
-public class UsersController(UserManager<AppUser> users, AuditService audit, AppDbContext db) : AdminControllerBase
+public class UsersController(UserManager<AppUser> users, AuditService audit, AppDbContext db, PasswordResetService reset) : AdminControllerBase
 {
     private bool IsSuper => User.IsInRole(Roles.SuperAdmin);
 
@@ -56,7 +56,8 @@ public class UsersController(UserManager<AppUser> users, AuditService audit, App
     {
         if (!Roles.All.Contains(input.Role)) ModelState.AddModelError("Role", "نقش نامعتبر است.");
         if (input.Role == Roles.SuperAdmin && !IsSuper) ModelState.AddModelError("Role", "فقط سوپر ادمین می‌تواند سوپر ادمین تعریف کند.");
-        if (input.Id is null && string.IsNullOrWhiteSpace(input.Password)) ModelState.AddModelError("Password", "برای کاربر جدید رمز عبور الزامی است.");
+        // تعیین / ریست رمز عبور کاربران فقط توسط سوپر ادمین؛ بقیه فقط می‌توانند لینک تعیین رمز را برای کاربر جدید ایمیل کنند
+        if (!IsSuper && !string.IsNullOrWhiteSpace(input.Password)) { ModelState.AddModelError("Password", "فقط مدیر کل (سوپر ادمین) می‌تواند رمز عبور کاربران را تعیین یا ریست کند."); input.Password = null; }
         if (!ModelState.IsValid) return View(input);
 
         AppUser? u;
@@ -69,6 +70,8 @@ public class UsersController(UserManager<AppUser> users, AuditService audit, App
             u = await users.FindByIdAsync(input.Id);
             if (u is null) return NotFound();
             if ((await users.GetRolesAsync(u)).Contains(Roles.SuperAdmin) && !IsSuper) return Forbid();
+            // ایمیل راه بازیابی رمز است؛ فقط سوپر ادمین می‌تواند ایمیل کاربر موجود را تغییر دهد
+            if (!IsSuper) input.Email = u.Email ?? input.Email;
             if (u.Id == users.GetUserId(User) && (!input.IsActive || input.Role != Roles.SuperAdmin) && IsSuper)
             {
                 // جلوگیری از قفل شدن سیستم: سوپرادمین نمی‌تواند خودش را غیرفعال یا تنزل دهد
@@ -78,7 +81,10 @@ public class UsersController(UserManager<AppUser> users, AuditService audit, App
         }
         u.FullName = input.FullName.Trim(); u.PhoneNumber = input.PhoneNumber?.Trim(); u.IsActive = input.IsActive;
 
-        var res = input.Id is null ? await users.CreateAsync(u, input.Password!) : await users.UpdateAsync(u);
+        var hasPassword = !string.IsNullOrWhiteSpace(input.Password);
+        var res = input.Id is null
+            ? (hasPassword ? await users.CreateAsync(u, input.Password!) : await users.CreateAsync(u))
+            : await users.UpdateAsync(u);
         if (res.Succeeded && input.Id is not null && !string.IsNullOrWhiteSpace(input.Password))
         {
             var token = await users.GeneratePasswordResetTokenAsync(u);
@@ -99,8 +105,34 @@ public class UsersController(UserManager<AppUser> users, AuditService audit, App
         if (!input.IsActive) await users.SetLockoutEndDateAsync(u, DateTimeOffset.MaxValue);
         else await users.SetLockoutEndDateAsync(u, null);
         audit.Log(input.Id is null ? "ایجاد کاربر" : "ویرایش کاربر", "User", u.Id, $"{u.UserName} ({Roles.Title(input.Role)})");
+        if (input.Id is not null && hasPassword) audit.Log("ریست رمز عبور توسط سوپر ادمین", "User", u.Id, u.UserName);
         await db.SaveChangesAsync();
+        if (input.Id is null && !hasPassword)
+        {
+            // کاربر جدید بدون رمز: لینک تعیین رمز به ایمیلش فرستاده می‌شود
+            var (ok, err) = input.IsActive ? await reset.SendLinkAsync(u, newAccount: true) : (false, "حساب غیرفعال است");
+            audit.Log(ok ? "ارسال لینک تعیین رمز" : "ارسال لینک تعیین رمز ناموفق", "User", u.Id, err);
+            await db.SaveChangesAsync();
+            if (ok) Success($"کاربر ساخته شد و لینک تعیین رمز به {u.Email} ایمیل شد.");
+            else Error($"کاربر ساخته شد ولی ایمیل تعیین رمز ارسال نشد ({err}). مدیر کل باید رمز را تعیین کند یا دوباره لینک بفرستد.");
+            return RedirectToAction(nameof(Index));
+        }
         Success("کاربر ذخیره شد.");
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>ارسال لینک ریست رمز به ایمیل کاربر — فقط سوپر ادمین</summary>
+    [HttpPost]
+    public async Task<IActionResult> SendResetLink(string id)
+    {
+        if (!IsSuper) return Forbid();
+        var u = await users.FindByIdAsync(id);
+        if (u is null) return NotFound();
+        if (!u.IsActive) { Error("این حساب غیرفعال است؛ ابتدا آن را فعال کنید."); return RedirectToAction(nameof(Index)); }
+        var (ok, err) = await reset.SendLinkAsync(u);
+        audit.Log(ok ? "ارسال لینک ریست رمز توسط سوپر ادمین" : "ارسال لینک ریست رمز ناموفق", "User", u.Id, err ?? u.UserName);
+        await db.SaveChangesAsync();
+        if (ok) Success($"لینک ریست رمز به {u.Email} ارسال شد (۲ ساعت اعتبار دارد)."); else Error("ارسال ایمیل ناموفق بود: " + err);
         return RedirectToAction(nameof(Index));
     }
 
