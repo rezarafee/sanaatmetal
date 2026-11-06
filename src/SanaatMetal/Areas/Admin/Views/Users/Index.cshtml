@@ -1,5 +1,16 @@
 @model List<SanaatMetal.Areas.Admin.Controllers.UserRow>
+@inject PleskMailService Plesk
 @{ ViewData["Title"] = "کاربران"; var isSuper = User.IsInRole(Roles.SuperAdmin); }
+@if (isSuper)
+{
+    <div class="a-card a-card-body mb-3 d-flex flex-wrap gap-2 align-items-center">
+        <span class="small"><i class="bi bi-envelope-paper ic"></i>ایمیل سازمانی Plesk:
+            @if (Plesk.Configured) { <b class="ltr d-inline-block">@Plesk.Options.DomainName</b><span class="text-muted"> — برای ساخت یا ریست ایمیل هر کاربر، صفحه ویرایش او را باز کنید.</span> }
+            else { <span class="text-muted">تنظیم نشده (بخش Plesk در appsettings.Production.json)</span> }
+        </span>
+        @if (Plesk.Configured) { <form method="post" asp-action="PleskTest" class="ms-auto"><button class="btn btn-soft btn-sm"><i class="bi bi-plug ic"></i>تست اتصال</button></form> }
+    </div>
+}
 <div class="a-card">
     <div class="a-card-head"><h5><i class="bi bi-people ic text-primary"></i>کاربران پنل</h5><a class="btn btn-a btn-sm" asp-action="Edit"><i class="bi bi-person-plus ic"></i>کاربر جدید</a></div>
     <div class="table-responsive">

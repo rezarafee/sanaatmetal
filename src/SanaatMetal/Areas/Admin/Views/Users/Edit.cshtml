@@ -1,5 +1,11 @@
 @model SanaatMetal.Areas.Admin.Controllers.UserInput
-@{ ViewData["Title"] = Model.Id is null ? "کاربر جدید" : "ویرایش کاربر"; var isSuper = User.IsInRole(Roles.SuperAdmin); }
+@inject PleskMailService Plesk
+@{
+    ViewData["Title"] = Model.Id is null ? "کاربر جدید" : "ویرایش کاربر"; var isSuper = User.IsInRole(Roles.SuperAdmin);
+    var mailLocal = Plesk.LocalPartOf(Model.Email);
+    bool? pleskExists = ViewBag.PleskExists;
+    string? pleskError = ViewBag.PleskError;
+}
 <form method="post" class="a-card a-card-body" style="max-width:860px">
     <input type="hidden" asp-for="Id" />
     <div asp-validation-summary="All" class="text-danger small"></div>
@@ -33,4 +39,47 @@
         <span class="small"><i class="bi bi-envelope-at ic"></i>به‌جای تعیین مستقیم رمز، می‌توانید لینک ریست رمز (۲ ساعت اعتبار) را به ایمیل کاربر بفرستید.</span>
         <button class="btn btn-soft ms-auto"><i class="bi bi-send ic"></i>ارسال لینک ریست رمز</button>
     </form>
+}
+@if (isSuper && Model.Id is not null)
+{
+    <div class="a-card mt-3" style="max-width:860px">
+        <div class="a-card-head"><h5><i class="bi bi-envelope-paper ic text-primary"></i>ایمیل سازمانی کاربر در Plesk</h5></div>
+        <div class="a-card-body">
+            @if (TempData["PleskPassword"] is string pp && pp.Split('|', 2) is [var addr, var pw])
+            {
+                <div class="alert alert-success small">
+                    <div class="mb-1"><i class="bi bi-check-circle ic"></i>انجام شد. این اطلاعات را به کاربر بدهید؛ <b>رمز فقط همین یک بار نمایش داده می‌شود</b>.</div>
+                    <div>ایمیل: <b class="ltr d-inline-block">@addr</b></div>
+                    <div>رمز ایمیل: <b class="ltr d-inline-block user-select-all">@pw</b></div>
+                </div>
+            }
+            @if (!Plesk.Configured)
+            {
+                <div class="small text-muted"><i class="bi bi-info-circle ic"></i>اتصال به Plesk هنوز تنظیم نشده است. بخش <span class="ltr">"Plesk"</span> را در فایل <span class="ltr">appsettings.Production.json</span> روی هاست پر کنید (راهنما در DEPLOY.md).</div>
+            }
+            else if (mailLocal is not null && pleskExists == true)
+            {
+                <form method="post" asp-action="PleskMail" asp-route-id="@Model.Id" class="row g-2 align-items-end" data-confirm="رمز ایمیل «@Model.Email» عوض شود؟ رمز قبلی دیگر کار نمی‌کند.">
+                    <input type="hidden" name="mode" value="reset" />
+                    <div class="col-12 small">صندوق <b class="ltr d-inline-block">@Model.Email</b> در Plesk وجود دارد.</div>
+                    <div class="col-md-6"><label class="form-label small">رمز جدید ایمیل (خالی = ساخت خودکار رمز قوی)</label><input class="form-control ltr" type="text" name="mailPassword" autocomplete="off" maxlength="64" /></div>
+                    <div class="col-md-6"><button class="btn btn-soft"><i class="bi bi-key ic"></i>ریست رمز ایمیل در Plesk</button></div>
+                </form>
+            }
+            else
+            {
+                @if (pleskError is not null) { <div class="alert alert-warning small"><i class="bi bi-exclamation-triangle ic"></i>@pleskError</div> }
+                <form method="post" asp-action="PleskMail" asp-route-id="@Model.Id" class="row g-2 align-items-end">
+                    <input type="hidden" name="mode" value="create" />
+                    <div class="col-md-6">
+                        <label class="form-label small">نام ایمیل</label>
+                        <div class="input-group ltr"><input class="form-control" name="mailName" value="@(mailLocal ?? Model.UserName.ToLowerInvariant())" required maxlength="64" pattern="[a-z0-9._\-]+" /><span class="input-group-text">@@@Plesk.Options.DomainName</span></div>
+                    </div>
+                    <div class="col-md-6"><label class="form-label small">رمز ایمیل (خالی = ساخت خودکار رمز قوی)</label><input class="form-control ltr" type="text" name="mailPassword" autocomplete="off" maxlength="64" /></div>
+                    <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="setAsUserEmail" value="true" id="setAsUserEmail" checked /><label class="form-check-label small" for="setAsUserEmail">این آدرس، ایمیل کاربر در سایت هم بشود (برای لینک بازیابی رمز)</label><input type="hidden" name="setAsUserEmail" value="false" /></div></div>
+                    <div class="col-12"><button class="btn btn-a"><i class="bi bi-plus-circle ic"></i>ساخت ایمیل در Plesk</button></div>
+                </form>
+            }
+        </div>
+    </div>
 }
