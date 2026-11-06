@@ -29,7 +29,7 @@ public class UserRow
 }
 
 [HasPermission(Permissions.Users)]
-public class UsersController(UserManager<AppUser> users, AuditService audit, AppDbContext db, PasswordResetService reset) : AdminControllerBase
+public class UsersController(UserManager<AppUser> users, AuditService audit, AppDbContext db, PasswordResetService reset, PleskMailService plesk) : AdminControllerBase
 {
     private bool IsSuper => User.IsInRole(Roles.SuperAdmin);
 
@@ -48,6 +48,12 @@ public class UsersController(UserManager<AppUser> users, AuditService audit, App
         if (u is null) return NotFound();
         var roles = await users.GetRolesAsync(u);
         if (roles.Contains(Roles.SuperAdmin) && !IsSuper) return Forbid();
+        if (IsSuper && plesk.Configured && plesk.LocalPartOf(u.Email) is { } local)
+        {
+            var (exists, err) = await plesk.ExistsAsync(local);
+            ViewBag.PleskExists = exists;
+            ViewBag.PleskError = err;
+        }
         return View(new UserInput { Id = u.Id, FullName = u.FullName, UserName = u.UserName!, Email = u.Email!, PhoneNumber = u.PhoneNumber, IsActive = u.IsActive, Role = roles.FirstOrDefault() ?? Roles.Secretary });
     }
 
@@ -119,6 +125,49 @@ public class UsersController(UserManager<AppUser> users, AuditService audit, App
         }
         Success("کاربر ذخیره شد.");
         return RedirectToAction(nameof(Index));
+    }
+
+    // ---------- صندوق ایمیل کاربر در Plesk (فقط سوپر ادمین) ----------
+
+    [HttpPost]
+    public async Task<IActionResult> PleskTest()
+    {
+        if (!IsSuper) return Forbid();
+        var r = await plesk.TestAsync();
+        if (r.Ok) Success($"اتصال به Plesk برقرار است (دامنه {plesk.Options.DomainName})."); else Error("اتصال به Plesk ناموفق: " + r.Error);
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>ساخت صندوق ایمیل name@domain برای کاربر یا تعیین رمز جدید برای صندوق موجود</summary>
+    [HttpPost]
+    public async Task<IActionResult> PleskMail(string id, string mode, string? mailName, string? mailPassword, bool setAsUserEmail = true)
+    {
+        if (!IsSuper) return Forbid();
+        var u = await users.FindByIdAsync(id);
+        if (u is null) return NotFound();
+        if (!plesk.Configured) { Error("اتصال به Plesk تنظیم نشده است."); return RedirectToAction(nameof(Edit), new { id }); }
+
+        var name = (mode == "reset" ? plesk.LocalPartOf(u.Email) : mailName)?.Trim().ToLowerInvariant();
+        if (!PleskMailService.ValidLocalPart(name)) { Error("نام ایمیل نامعتبر است (فقط حروف کوچک و اعداد انگلیسی، نقطه، خط تیره)."); return RedirectToAction(nameof(Edit), new { id }); }
+        var address = $"{name}@{plesk.Options.DomainName}";
+
+        var password = string.IsNullOrWhiteSpace(mailPassword) ? PleskMailService.GeneratePassword() : mailPassword.Trim();
+        if (password.Length < 8) { Error("رمز ایمیل باید حداقل ۸ کاراکتر باشد (یا خالی بگذارید تا خودکار ساخته شود)."); return RedirectToAction(nameof(Edit), new { id }); }
+
+        var r = mode == "reset" ? await plesk.SetPasswordAsync(name!, password) : await plesk.CreateMailboxAsync(name!, password);
+        audit.Log(mode == "reset" ? (r.Ok ? "تغییر رمز ایمیل در Plesk" : "تغییر رمز ایمیل در Plesk ناموفق") : (r.Ok ? "ساخت ایمیل در Plesk" : "ساخت ایمیل در Plesk ناموفق"),
+            "User", u.Id, r.Ok ? address : $"{address}: {r.Error}");
+        if (r.Ok && mode != "reset" && setAsUserEmail && !string.Equals(u.Email, address, StringComparison.OrdinalIgnoreCase))
+        {
+            var er = await users.SetEmailAsync(u, address);
+            if (er.Succeeded) { u.EmailConfirmed = true; await users.UpdateAsync(u); }
+            else Error("ایمیل ساخته شد ولی به عنوان ایمیل کاربر ثبت نشد: " + string.Join("، ", er.Errors.Select(e => e.Description)));
+        }
+        await db.SaveChangesAsync();
+        // رمز فقط همین یک بار به سوپر ادمین نشان داده می‌شود و جایی ذخیره نمی‌شود
+        if (r.Ok) TempData["PleskPassword"] = $"{address}|{password}";
+        else Error("Plesk: " + r.Error);
+        return RedirectToAction(nameof(Edit), new { id });
     }
 
     /// <summary>ارسال لینک ریست رمز به ایمیل کاربر — فقط سوپر ادمین</summary>

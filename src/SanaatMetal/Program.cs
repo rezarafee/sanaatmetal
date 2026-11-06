@@ -120,6 +120,18 @@ builder.Services.AddScoped<SettingsService>();
 builder.Services.AddScoped<FileStorageService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<PasswordResetService>();
+// اتصال به پنل Plesk برای ساخت ایمیل کاربران (تنظیمات فقط در appsettings.Production.json)
+builder.Services.Configure<PleskOptions>(config.GetSection("Plesk"));
+builder.Services.AddHttpClient(PleskMailService.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15))
+    .ConfigurePrimaryHttpMessageHandler(sp =>
+    {
+        var h = new HttpClientHandler { UseProxy = false };
+        // پنل Plesk روی localhost:8443 معمولاً گواهی SSL به نام دامنه دیگری دارد
+        if (sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PleskOptions>>().Value.AllowInvalidCertificate)
+            h.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        return h;
+    });
+builder.Services.AddScoped<PleskMailService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<PricingService>();
 builder.Services.AddScoped<InvoiceService>();
