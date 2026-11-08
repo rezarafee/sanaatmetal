@@ -483,3 +483,6 @@ html[lang="en"] .sm-page-head h1 { font-family: var(--sm-font); font-weight: 900
   .sm-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .sm-tabs .nav-link { white-space: nowrap; padding: .7rem .9rem; }
 }
+
+/* min-w-0 در Bootstrap نیست؛ برای کوتاه شدن متن طولانی داخل flex لازم است */
+.min-w-0 { min-width: 0 !important; }
