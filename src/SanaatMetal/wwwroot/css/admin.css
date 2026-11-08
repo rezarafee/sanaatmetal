@@ -278,3 +278,44 @@ jdp-container .jdp-btn-today, jdp-container .jdp-btn-close, jdp-container .jdp-b
 
 /* زیرعنوان داخل کارت تنظیمات */
 .a-subhead { font-weight: 800; font-size: .9rem; color: var(--a-muted); border-bottom: 1px dashed var(--a-border); padding-bottom: .4rem; margin-top: .3rem; }
+
+/* ---------- Responsive fixes (phones / tablets) ---------- */
+/* min-w-0 در Bootstrap نیست؛ بدون آن متن‌های طولانی داخل flex صفحه را افقی اسکرول می‌کنند */
+.min-w-0 { min-width: 0 !important; }
+.a-top h1 { min-width: 0; }
+.a-main { min-width: 0; }
+.a-content { min-width: 0; overflow-wrap: break-word; }
+.a-card { min-width: 0; }
+img, svg, video, canvas { max-width: 100%; }
+.modal-body { overflow-wrap: break-word; }
+.inv-desc { min-width: 220px; white-space: normal !important; }
+
+@media (max-width: 767.98px) {
+  /* نوار ابزار صفحه فاکتور: دکمه‌ها هم‌اندازه و فرم وضعیت در یک ردیف کامل */
+  .inv-toolbar > .btn, .inv-toolbar > form:not(.inv-status) { flex: 1 1 auto; }
+  .inv-toolbar > form:not(.inv-status) .btn { width: 100%; }
+  .inv-toolbar .inv-status { flex: 1 1 100%; order: 10; }
+  .inv-toolbar .inv-status .form-select { flex: 1 1 auto; min-width: 0; }
+
+  /* اقلام فاکتور و ردیف چک‌ها روی گوشی به شکل کارت (بدون اسکرول افقی جدول ۹۸۰ پیکسلی) */
+  .inv-items, .cheque-table { min-width: 0 !important; }
+  .inv-items thead, .cheque-table thead { display: none; }
+  .inv-items tbody, .cheque-table tbody { display: block; }
+  .inv-items tr.inv-row, .cheque-table tr.cheque-row {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem .6rem;
+    padding: .85rem 1rem; border-bottom: 1px solid var(--a-border);
+  }
+  .cheque-table tr.cheque-row { padding: .75rem 0; }
+  .inv-items tr.inv-row:nth-child(even), .cheque-table tr.cheque-row:nth-child(even) { background: var(--a-surface-2); }
+  .inv-items tr > td, .cheque-table tr > td { display: block; padding: 0 !important; border: 0; width: auto !important; white-space: normal !important; text-align: start !important; }
+  .inv-items td[data-label]::before, .cheque-table td[data-label]::before {
+    content: attr(data-label); display: block; font-size: .72rem; font-weight: 700; color: var(--a-muted); margin-bottom: .2rem;
+  }
+  .inv-items td[data-idx], .cheque-table td[data-idx] { align-self: center; font-weight: 800; }
+  .inv-items td[data-idx]::before, .cheque-table td[data-idx]::before { display: inline; margin: 0 0 0 .3rem; }
+  .inv-items td.row-remove, .cheque-table td.row-remove { order: -1; grid-column: 2; grid-row: 1; justify-self: end; }
+  .inv-items td.inv-desc-cell { grid-column: 1 / -1; }
+  .inv-items td[data-line] { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; padding-top: .35rem !important; border-top: 1px dashed var(--a-border); }
+  .inv-items td[data-line]::before { margin: 0; }
+  .inv-items-wrap { min-height: 0; }
+}
