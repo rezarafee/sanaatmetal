@@ -422,4 +422,91 @@
     draw();
     document.addEventListener('themechange', draw);
   }
+
+  /* ---------- ظاهر سایت: انتخابگر رنگ، قالب‌های آماده و پیش‌نمایش زنده ---------- */
+  const hexOk = v => /^#[0-9a-f]{6}$/i.test(v);
+  $$('input[type=color][data-color-for]').forEach(picker => {
+    const text = document.getElementById(picker.dataset.colorFor);
+    if (!text) return;
+    picker.addEventListener('input', () => { text.value = picker.value; text.dispatchEvent(new Event('input', { bubbles: true })); });
+    text.addEventListener('input', () => { const v = text.value.trim(); if (hexOk(v)) picker.value = v.toLowerCase(); });
+  });
+  $$('[data-color-clear]').forEach(btn => btn.addEventListener('click', () => {
+    const text = document.getElementById(btn.dataset.colorClear);
+    if (text) { text.value = ''; text.dispatchEvent(new Event('input', { bubbles: true })); }
+  }));
+  $$('[data-theme-preset]').forEach(btn => btn.addEventListener('click', () => {
+    let p; try { p = JSON.parse(btn.dataset.themePreset); } catch (e) { return; }
+    Object.entries(p).forEach(([name, val]) => {
+      const text = document.getElementById('c_' + name);
+      if (!text) return;
+      text.value = val || '';
+      text.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    $$('[data-theme-preset]').forEach(b => b.classList.toggle('active', b === btn));
+  }));
+  $$('input[type=range]').forEach(r => {
+    const out = document.querySelector('[data-range-out="' + r.name + '"]');
+    if (out) r.addEventListener('input', () => { out.textContent = r.value; });
+  });
+  // عکس پیش‌نمایش که هنوز خالی است بعد از انتخاب فایل نمایش داده می‌شود
+  $$('img[data-preview-for].d-none').forEach(img => {
+    document.getElementById(img.dataset.previewFor)?.addEventListener('change', () => {
+      img.classList.remove('d-none');
+      const icon = img.previousElementSibling;
+      if (icon && icon.matches('i.bi')) icon.classList.add('d-none');
+    });
+  });
+
+  const preview = document.getElementById('themePreview');
+  const aForm = document.getElementById('appearanceForm');
+  if (preview && aForm) {
+    const val = n => { const el = aForm.elements[n]; if (!el) return ''; if (el.length && !el.type) { const c = [...el].find(x => x.type === 'checkbox'); return c ? c.checked : el[0].value.trim(); } return el.type === 'checkbox' ? el.checked : el.value.trim(); };
+    const mix = (a, b, t) => {
+      const p = h => [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16));
+      const x = p(a), y = p(b);
+      return '#' + x.map((c, i) => Math.round(c + (y[i] - c) * t).toString(16).padStart(2, '0')).join('');
+    };
+    const lum = h => { const c = [1, 3, 5].map(i => { const v = parseInt(h.substr(i, 2), 16) / 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+    const readable = bg => (1.05 / (lum(bg) + .05)) >= 3 ? '#ffffff' : '#161d33';
+    const draw = () => {
+      const P = hexOk(val('ThemePrimary')) ? val('ThemePrimary') : '#22318a';
+      const A = hexOk(val('ThemeAccent')) ? val('ThemeAccent') : '#f5b301';
+      const BG = hexOk(val('ThemeBackground')) ? val('ThemeBackground') : '#f3f4f8';
+      const nav = hexOk(val('ThemeNavBg')) ? val('ThemeNavBg') : '#ffffff';
+      const navText = hexOk(val('ThemeNavText')) ? val('ThemeNavText') : readable(nav);
+      const hero = hexOk(val('ThemeHeroBg')) ? val('ThemeHeroBg') : mix(P, '#000000', .55);
+      const top = hexOk(val('ThemeTopbarBg')) ? val('ThemeTopbarBg') : mix(P, '#000000', .45);
+      const foot = hexOk(val('ThemeFooterBg')) ? val('ThemeFooterBg') : mix(P, '#000000', .7);
+      const st = preview.style;
+      st.setProperty('--tp-primary', P); st.setProperty('--tp-on-primary', readable(P));
+      st.setProperty('--tp-accent', A); st.setProperty('--tp-on-accent', readable(A) === '#ffffff' ? '#ffffff' : mix(P, '#000000', .35));
+      st.setProperty('--tp-bg', BG); st.setProperty('--tp-nav', nav); st.setProperty('--tp-nav-text', navText);
+      st.setProperty('--tp-hero', hero); st.setProperty('--tp-top', top); st.setProperty('--tp-top-text', readable(top));
+      st.setProperty('--tp-foot', foot); st.setProperty('--tp-foot-text', readable(foot));
+      st.setProperty('--tp-radius', (+val('ThemeRadius') || 0) * .6 + 'px');
+      st.setProperty('--tp-logo', Math.max(18, (+val('LogoHeight') || 44) * .55) + 'px');
+      st.setProperty('--tp-title', val('ThemeTitleFont') === 'Vazirmatn' ? 'Vazirmatn' : 'Titr, Lalezar, Vazirmatn');
+      st.setProperty('--tp-title-w', val('ThemeTitleFont') === 'Vazirmatn' ? '900' : '400');
+      const r = (val('ProductImageRatio') || '4:3').split(':');
+      st.setProperty('--tp-ratio', r[0] + ' / ' + r[1]);
+      preview.dataset.shape = val('LogoShape');
+      preview.dataset.brand = val('ShowBrandText') ? '1' : '0';
+      preview.dataset.fit = val('ProductImageFit');
+    };
+    aForm.addEventListener('input', draw);
+    aForm.addEventListener('change', draw);
+    draw();
+  }
+
+  /* ---------- متن‌های سایت: جستجو ---------- */
+  $$('[data-text-filter]').forEach(inp => {
+    const root = document.querySelector(inp.dataset.textFilter);
+    if (!root) return;
+    inp.addEventListener('input', () => {
+      const q = inp.value.trim().toLowerCase();
+      $$('[data-text-row]', root).forEach(row => { row.classList.toggle('d-none', !!q && !row.dataset.textRow.includes(q)); });
+      $$('[data-text-group]', root).forEach(g => { g.classList.toggle('d-none', !!q && !$$('[data-text-row]:not(.d-none)', g).length); });
+    });
+  });
 })();

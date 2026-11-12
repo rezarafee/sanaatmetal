@@ -1,3 +1,4 @@
+@inject SanaatMetal.Services.Lang L
 @model Product
 @{
     var isNew = Model.Id == 0;
@@ -79,7 +80,7 @@
         </div>
         <div class="table-responsive">
             <table class="table a-table table-hover">
-                <thead><tr><th>سایز</th><th>کلاس</th><th>اسکجول</th><th>SKU</th><th>واحد</th><th>موجودی</th>@if (Can(Permissions.PricingView)) { <th>قیمت فروش</th><th>تخفیف</th> }<th>وضعیت</th><th></th></tr></thead>
+                <thead><tr><th>@L["Size"]</th><th>@L["Class"]</th><th>@L["Schedule"]</th><th>SKU</th><th>واحد</th><th>موجودی</th>@if (Can(Permissions.PricingView)) { <th>قیمت فروش</th><th>تخفیف</th> }<th>وضعیت</th><th></th></tr></thead>
                 <tbody>
                     @foreach (var v in Model.Variants)
                     {
@@ -197,9 +198,9 @@
                 <div class="modal-body">
                     <input type="hidden" name="Id" />
                     <div class="row g-3">
-                        <div class="col-md-4"><label class="form-label">سایز *</label><input class="form-control ltr" name="Size" required placeholder='2"' /></div>
-                        <div class="col-md-4"><label class="form-label">کلاس فشار</label><input class="form-control ltr" name="PressureClass" placeholder="150#" /></div>
-                        <div class="col-md-4"><label class="form-label">اسکجول / ضخامت</label><input class="form-control ltr" name="Schedule" placeholder="SCH40" /></div>
+                        <div class="col-md-4"><label class="form-label">@L["Size"] *</label><input class="form-control ltr" name="Size" required placeholder='2"' /></div>
+                        <div class="col-md-4"><label class="form-label">@L["Class"]</label><input class="form-control ltr" name="PressureClass" placeholder="150#" /></div>
+                        <div class="col-md-4"><label class="form-label">@L["Schedule"]</label><input class="form-control ltr" name="Schedule" placeholder="SCH40" /></div>
                         <div class="col-md-4"><label class="form-label">SKU</label><input class="form-control ltr" name="Sku" /></div>
                         <div class="col-md-4"><label class="form-label">واحد</label><input class="form-control" name="Unit" list="units" /><datalist id="units"><option value="عدد"></option><option value="شاخه"></option><option value="متر"></option><option value="کیلوگرم"></option><option value="ست"></option></datalist></div>
                         <div class="col-md-4"><label class="form-label">موجودی</label><input class="form-control" name="Stock" inputmode="decimal" /></div>

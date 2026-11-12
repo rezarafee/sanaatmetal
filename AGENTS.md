@@ -107,7 +107,7 @@ Historically the deliverable was also zipped as `SanaatMetal.zip` (publish + sou
 | `Plesk:Url/ApiKey/Login/Password/Domain/AllowInvalidCertificate` | mailbox management; **only in appsettings.Production.json** |
 | `Kestrel:Limits:MaxRequestBodySize` | 30 MB |
 
-SMTP, company info, two offices, social links, currency, invoice footer, logo and `AdminFontSize` (12–18) live in the **`SiteSettings` DB row**
+SMTP, company info, two offices, social links, currency, invoice footer and `AdminFontSize` (12–18) live in the **`SiteSettings` DB row**
 (edited in admin Settings, cached by `SettingsService`; SMTP password encrypted with Data Protection; SMTP section editable by super admin only).
 
 ## 6. Hosting realities (important — learned the hard way)
@@ -145,7 +145,9 @@ The host is **shared Windows/Plesk** and the app pool **cannot create folders or
   JSON data for JS may be emitted as `<script type="application/json">` (see `#sm-texts`). Inline `style=""` is allowed.
   New iframes/hosts must be added to the CSP in `SecurityHeadersMiddleware`.
 - Rate limits: `forms` (contact/checkout 5 per 5 min), `login`, `reset`. Honeypot field on public forms.
-- Uploads: extension + size + magic-bytes checked, random names, **SVG and executables rejected** (`FileStorageService`). Images are resized client-side (`data-img` inputs).
+- Uploads: extension + size + magic-bytes checked, random names, **SVG and executables rejected** (`FileStorageService`). Images are resized client-side (`data-img` inputs)
+  and then **server-side**: pass an `ImageProfile` to `FileStorageService.SaveAsync` (`ImageService`, SkiaSharp: EXIF orientation, resize/crop/pad, WebP/JPEG/PNG, >50 MP rejected).
+  Product images use `ImageProfile.Product(settings)` (ratio + fit from Appearance); logos, favicon, OG, hero and background have their own profiles.
 - Prices and invoice totals are **always computed on the server** (`InvoiceService.Recalculate`, `PricingService`); never trust posted totals.
 - Invoices are soft-deleted (`IsDeleted`), excluded from reports, restorable from Trash.
 - Secrets never in git: `appsettings.Production.json` is git-ignored; don't put real passwords in `appsettings.json` or docs.
@@ -175,6 +177,17 @@ The host is **shared Windows/Plesk** and the app pool **cannot create folders or
 - Slugs: `Fmt.Slugify`; product/category `Slug` is unique. Admin pages are noindex.
 
 ## 11. UI conventions
+
+- **The site is white-label** (owner reuses it for other shops, e.g. CCTV, auto parts). Never hard-code the company name, logo, colours or industry words
+  (pipe/flange/valve) in views. Use:
+  - **Admin › ظاهر سایت** (`SettingsController.Appearance`, fields `Theme*`, `*Path`, `LogoShape/Height`, `ProductImage*`, `RevealAnimation`, `HoverEffect`, `Show*`):
+    `ThemeCss.Build` turns them into CSS variables served at **`/theme.css?v=hash`** (loaded after `site.css`; derives shades, readable text colours and dark-theme values).
+    New colours in `site.css` must go through `--sm-*` variables so the theme can override them. Add new appearance fields to `AppearanceNames` in `SettingsController`
+    (otherwise the main Settings form would wipe them) and normalise them in `ThemeCss.Normalize`.
+  - **Admin › متن‌های سایت** (`SettingsController.Texts`): overrides any key listed in `Lang.EditableGroups`, stored as JSON in `SiteSettings.TextOverrides`; `L["Key"]` returns the override.
+    Keep `Lang.cs` defaults generic; shop-specific wording belongs in overrides (the `SiteAppearance` migration copied the old pipe/flange texts into the existing DB).
+  - Animations: `body[data-reveal]` (scroll-in, `.reveal` elements, staggered) and `body[data-hover]` (zoom/tilt/shine/lift) in `site.css`/`site.js`; product gallery has hover-zoom + lightbox
+    (Swiper zoom). Hidden-until-animated states only apply under `html.js` (set by `theme-init.js`) and are disabled for `prefers-reduced-motion`.
 
 - **Design**: logo navy `#22318a` / `#2c3fa0` + gold `#f5b301` (gold buttons use navy text). Keep some colour/animation in admin (owner asked for "colourful and animated"),
   but respect `prefers-reduced-motion`. Light + dark themes via `data-bs-theme` on `<html>` (`theme-init.js` runs early to avoid flash).

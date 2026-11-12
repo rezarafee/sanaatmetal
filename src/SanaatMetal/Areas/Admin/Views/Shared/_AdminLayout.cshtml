@@ -2,11 +2,15 @@
 @{
     var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
     string Act(params string[] names) => names.Contains(controller, StringComparer.OrdinalIgnoreCase) ? "active" : "";
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    string ActSettings(string a) => controller == "Settings" && string.Equals(action, a, StringComparison.OrdinalIgnoreCase) ? "active" : "";
     var name = User.DisplayName();
     var roles = string.Join("، ", Roles.All.Where(r => User.IsInRole(r)).Select(Roles.Title));
     int newOrders = ViewBag.NewOrders ?? 0;
     int unread = ViewBag.UnreadMessages ?? 0;
-    var fontPx = Math.Clamp((await SiteSettingsSvc.GetAsync()).AdminFontSize, 12, 18);
+    var site = await SiteSettingsSvc.GetAsync();
+    var fontPx = Math.Clamp(site.AdminFontSize, 12, 18);
+    var adminLogo = string.IsNullOrEmpty(site.LogoPath) ? "/img/brand/logo-mark.svg" : site.LogoPath;
 }
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-bs-theme="light" style="font-size:@(fontPx)px">
@@ -21,13 +25,13 @@
     <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/lib/jalalidatepicker/jalalidatepicker.min.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
-    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
+    @if (!string.IsNullOrEmpty(site.FaviconPath)) { <link rel="icon" href="@site.FaviconPath" type="image/png" /> } else { <link rel="icon" href="~/favicon.svg" type="image/svg+xml" /> }
 </head>
 <body>
     <aside class="a-side" id="aSide">
         <a class="a-brand" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
-            <span class="a-brand-logo"><img src="~/img/brand/logo-mark.svg" alt="صنعت متال" width="42" height="42" /></span>
-            <div><b>صنعت متال</b><small><span class="a-wm"><b>S</b>anaat<b>M</b>etal</span> · پنل مدیریت</small></div>
+            <span class="a-brand-logo"><img src="@adminLogo" alt="@site.CompanyNameFa" width="42" height="42" /></span>
+            <div class="min-w-0"><b class="text-truncate d-block">@site.CompanyNameFa</b><small>@(string.IsNullOrWhiteSpace(site.CompanyNameEn) ? "" : site.CompanyNameEn + " · ")پنل مدیریت</small></div>
         </a>
         <nav class="a-menu">
             @if (Can(Permissions.Dashboard))
@@ -86,7 +90,9 @@
                 <div class="a-menu-title">سیستم</div>
                 @if (Can(Permissions.Settings))
                 {
-                    <a class="a-link @Act("Settings")" asp-area="Admin" asp-controller="Settings" asp-action="Index"><i class="bi bi-sliders"></i><span>تنظیمات سایت</span></a>
+                    <a class="a-link @ActSettings("Index")" asp-area="Admin" asp-controller="Settings" asp-action="Index"><i class="bi bi-sliders"></i><span>تنظیمات سایت</span></a>
+                    <a class="a-link @ActSettings("Appearance")" asp-area="Admin" asp-controller="Settings" asp-action="Appearance"><i class="bi bi-palette"></i><span>ظاهر سایت</span></a>
+                    <a class="a-link @ActSettings("Texts")" asp-area="Admin" asp-controller="Settings" asp-action="Texts"><i class="bi bi-fonts"></i><span>متن‌های سایت</span></a>
                 }
                 @if (Can(Permissions.Users))
                 {

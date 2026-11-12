@@ -37,7 +37,7 @@ public class CategoriesController(AppDbContext db, FileStorageService files, Aud
         if (input.ParentId == c.Id && c.Id != 0) input.ParentId = null;
         if (image is { Length: > 0 })
         {
-            var (path, err) = await files.SaveAsync(image, "categories", UploadKind.Image);
+            var (path, err) = await files.SaveAsync(image, "categories", UploadKind.Image, new ImageProfile(800, 600, ImageFit.Contain));
             if (err is not null) ModelState.AddModelError("", err);
             else { files.Delete(c.ImagePath); c.ImagePath = path; }
         }
