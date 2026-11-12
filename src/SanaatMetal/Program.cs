@@ -225,6 +225,13 @@ app.UseAuthorization();
 
 app.MapDiag();
 app.MapStoredUploads();
+// رنگ‌ها و ظاهر سایت از تنظیمات پنل (Admin > ظاهر سایت)؛ با ?v= نسخه‌دار می‌شود و مرورگر کش می‌کند
+app.MapGet("/theme.css", async (HttpContext ctx, SettingsService settings) =>
+{
+    var css = ThemeCss.Build(await settings.GetAsync());
+    ctx.Response.Headers.CacheControl = ctx.Request.Query.ContainsKey("v") ? "public, max-age=31536000, immutable" : "no-cache";
+    return Results.Text(css, "text/css; charset=utf-8");
+});
 app.MapAreaControllerRoute("admin", "Admin", "admin/{controller=Dashboard}/{action=Index}/{id?}");
 app.MapControllers();
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");

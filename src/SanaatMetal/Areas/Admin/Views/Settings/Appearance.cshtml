@@ -1,0 +1,235 @@
+@model SiteSettings
+@{
+    ViewData["Title"] = "ظاهر سایت";
+    // قالب‌های رنگی آماده برای انواع فروشگاه؛ با کلیک، رنگ‌های فرم پر می‌شوند (ذخیره با دکمه پایین صفحه)
+    var presets = new[]
+    {
+        new { Name = "صنعتی (سرمه‌ای و طلایی)", Icon = "bi-gear-wide-connected", Primary = "#22318a", Accent = "#f5b301", Bg = "#f3f4f8", Nav = "", NavText = "", Topbar = "", Footer = "", Hero = "" },
+        new { Name = "دوربین و امنیت", Icon = "bi-camera-video", Primary = "#0f766e", Accent = "#22d3ee", Bg = "#f1f5f9", Nav = "#0f172a", NavText = "", Topbar = "#020617", Footer = "#020617", Hero = "#0b1220" },
+        new { Name = "لوازم یدکی خودرو", Icon = "bi-car-front", Primary = "#c62828", Accent = "#ffb300", Bg = "#f5f5f5", Nav = "#1c1c1c", NavText = "", Topbar = "#b71c1c", Footer = "#121212", Hero = "#1a1a1a" },
+        new { Name = "دیجیتال و الکترونیک", Icon = "bi-cpu", Primary = "#2563eb", Accent = "#f97316", Bg = "#f8fafc", Nav = "", NavText = "", Topbar = "#1e3a8a", Footer = "#0f172a", Hero = "#0b1a3d" },
+        new { Name = "کشاورزی و سبز", Icon = "bi-tree", Primary = "#2e7d32", Accent = "#c0ca33", Bg = "#f4f7f2", Nav = "", NavText = "", Topbar = "#1b5e20", Footer = "#10230f", Hero = "#12301a" },
+        new { Name = "لوکس (مشکی و طلایی)", Icon = "bi-gem", Primary = "#1f1f1f", Accent = "#d4af37", Bg = "#f7f5f0", Nav = "#111111", NavText = "#f3e7c3", Topbar = "#000000", Footer = "#0a0a0a", Hero = "#111111" },
+    };
+    var fitText = new Dictionary<string, string>
+    {
+        ["contain"] = "کامل (بدون برش، حاشیه شفاف)",
+        ["white"] = "کامل با زمینه سفید (مناسب عکس محصول)",
+        ["cover"] = "پر کردن کادر (لبه‌ها بریده می‌شوند)",
+    };
+    var revealText = new Dictionary<string, string> { ["fade-up"] = "محو و بالا آمدن", ["zoom"] = "بزرگ شدن", ["flip"] = "چرخش سه‌بعدی", ["blur"] = "از تاری به وضوح", ["slide"] = "لغزیدن از کنار", ["none"] = "بدون انیمیشن" };
+    var hoverText = new Dictionary<string, string> { ["zoom"] = "بزرگ‌نمایی عکس", ["tilt"] = "کج شدن سه‌بعدی", ["shine"] = "درخشش نور", ["lift"] = "بالا آمدن کارت", ["none"] = "بدون افکت" };
+}
+@functions {
+    // ردیف رنگ: انتخابگر رنگ + کادر متنی (خالی = رنگ پیش‌فرض)
+    private Microsoft.AspNetCore.Html.IHtmlContent ColorField(string name, string label, string? value, bool optional, string? hint = null)
+    {
+        var id = "c_" + name;
+        var v = ThemeCss.Hex(value);
+        var e = (Func<string?, string>)(x => System.Net.WebUtility.HtmlEncode(x ?? ""));
+        var html = $@"<div class=""col-sm-6""><label class=""form-label"" for=""{id}"">{e(label)}</label>
+<div class=""input-group a-color""><input type=""color"" class=""form-control form-control-color"" value=""{e(v ?? "#ffffff")}"" data-color-for=""{id}"" aria-label=""{e(label)}"" />
+<input type=""text"" class=""form-control ltr"" id=""{id}"" name=""{name}"" value=""{e(v)}"" maxlength=""7"" placeholder=""{(optional ? "پیش‌فرض" : "#000000")}"" data-theme-var=""{name}"" {(optional ? "" : "required")} />
+{(optional ? $@"<button type=""button"" class=""btn btn-soft"" data-color-clear=""{id}"" title=""برگشت به پیش‌فرض""><i class=""bi bi-arrow-counterclockwise""></i></button>" : "")}</div>
+{(hint is null ? "" : $@"<div class=""form-text"">{e(hint)}</div>")}</div>";
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+
+    // آپلود عکس با پیش‌نمایش و گزینه حذف
+    private Microsoft.AspNetCore.Html.IHtmlContent ImageField(string field, string label, string? current, string hint, string ratio = "3/1", string? fallback = null)
+    {
+        var e = (Func<string?, string>)(x => System.Net.WebUtility.HtmlEncode(x ?? ""));
+        var src = current ?? fallback;
+        var html = $@"<div class=""col-sm-6""><label class=""form-label"" for=""f_{field}"">{e(label)}</label>
+<div class=""a-img-drop"" style=""aspect-ratio:{ratio}"">{(src is null ? @"<i class=""bi bi-image""></i>" : "")}<img src=""{e(src)}"" alt="""" data-preview-for=""f_{field}"" class=""{(src is null ? "d-none" : "")}"" /></div>
+<input type=""file"" class=""form-control form-control-sm mt-2"" name=""{field}"" id=""f_{field}"" accept="".jpg,.jpeg,.png,.webp"" data-img />
+<div class=""form-text"">{e(hint)}</div>
+{(current is null ? "" : $@"<div class=""form-check""><input class=""form-check-input"" type=""checkbox"" name=""remove"" value=""{field}"" id=""rm_{field}"" /><label class=""form-check-label small"" for=""rm_{field}"">حذف و برگشت به پیش‌فرض</label></div>")}</div>";
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+}
+
+<form method="post" enctype="multipart/form-data" id="appearanceForm">
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-magic ic text-primary"></i>قالب‌های آماده</h5></div>
+                <div class="a-card-body">
+                    <p class="small text-muted">برای شروع سریع یکی را انتخاب کنید؛ رنگ‌ها پر می‌شوند و بعد می‌توانید تغییرشان دهید. تا «ذخیره» را نزنید سایت تغییر نمی‌کند.</p>
+                    <div class="a-presets">
+                        @foreach (var p in presets)
+                        {
+                            <button type="button" class="a-preset" data-theme-preset='@System.Text.Json.JsonSerializer.Serialize(new { ThemePrimary = p.Primary, ThemeAccent = p.Accent, ThemeBackground = p.Bg, ThemeNavBg = p.Nav, ThemeNavText = p.NavText, ThemeTopbarBg = p.Topbar, ThemeFooterBg = p.Footer, ThemeHeroBg = p.Hero })'>
+                                <span class="a-preset-sw"><i style="background:@p.Primary"></i><i style="background:@p.Accent"></i><i style="background:@(string.IsNullOrEmpty(p.Nav) ? p.Bg : p.Nav)"></i></span>
+                                <span><i class="bi @p.Icon ic"></i>@p.Name</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-palette ic text-danger"></i>رنگ‌ها</h5></div>
+                <div class="a-card-body row g-3">
+                    @ColorField("ThemePrimary", "رنگ اصلی سایت", Model.ThemePrimary, false, "دکمه‌ها، لینک‌ها، عنوان‌ها و نوار بالای صفحات")
+                    @ColorField("ThemeAccent", "رنگ تأکیدی", Model.ThemeAccent, false, "دکمه جستجو، نشان سبد خرید، خط زیر منو؛ رنگ متن روی آن خودکار انتخاب می‌شود")
+                    @ColorField("ThemeBackground", "رنگ پس‌زمینه صفحه (تم روشن)", Model.ThemeBackground, false)
+                    @ColorField("ThemeHeroBg", "رنگ بنر اصلی و سربرگ صفحات", Model.ThemeHeroBg, true, "خالی = نسخه تیره رنگ اصلی")
+                    <div class="col-12"><div class="a-subhead"><i class="bi bi-menu-button-wide ic"></i>منو، نوار بالا و پاورقی</div></div>
+                    @ColorField("ThemeNavBg", "پس‌زمینه منوی بالا", Model.ThemeNavBg, true, "خالی = سفید (در تم تیره، تیره)")
+                    @ColorField("ThemeNavText", "رنگ متن منو", Model.ThemeNavText, true, "خالی = خودکار، خوانا روی رنگ منو")
+                    @ColorField("ThemeTopbarBg", "نوار باریک بالای منو (تلفن‌ها)", Model.ThemeTopbarBg, true)
+                    @ColorField("ThemeFooterBg", "پاورقی (فوتر)", Model.ThemeFooterBg, true)
+                </div>
+            </div>
+
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-badge-tm ic text-warning"></i>لوگو و آیکن‌ها</h5></div>
+                <div class="a-card-body row g-3">
+                    @ImageField("logo", "لوگوی بالای سایت", Model.LogoPath, "PNG شفاف بهترین است. خودکار حداکثر ۱۰۰۰×۳۲۰ پیکسل می‌شود.", "3/1", "/img/brand/logo-mark.svg")
+                    @ImageField("footerLogo", "لوگوی پاورقی (اختیاری)", Model.FooterLogoPath, "برای پاورقی تیره، نسخه سفید لوگو. خالی = همان لوگوی بالا.", "3/1")
+                    <div class="col-sm-6">
+                        <label class="form-label">شکل لوگو</label>
+                        <select class="form-select" asp-for="LogoShape" data-theme-var="LogoShape">
+                            <option value="circle">دایره (لوگوی مربعی)</option>
+                            <option value="rounded">مربع گوشه‌گرد</option>
+                            <option value="wide">افقی / مستطیلی (بدون برش)</option>
+                        </select>
+                        <div class="form-check form-switch mt-2"><input class="form-check-input" asp-for="ShowBrandText" /><label class="form-check-label" asp-for="ShowBrandText">نام شرکت کنار لوگو نوشته شود</label></div>
+                        <div class="form-text">اگر لوگو خودش نام شرکت را دارد، «افقی» را انتخاب و نوشتن نام را خاموش کنید.</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label" for="LogoHeight">ارتفاع لوگو: <b><span data-range-out="LogoHeight">@Model.LogoHeight</span> پیکسل</b></label>
+                        <input type="range" class="form-range" min="28" max="96" step="2" asp-for="LogoHeight" data-theme-var="LogoHeight" />
+                    </div>
+                    @ImageField("favicon", "آیکن تب مرورگر (Favicon)", Model.FaviconPath, "عکس مربعی؛ خودکار ۱۹۲×۱۹۲ پیکسل می‌شود.", "1/1", "/favicon.svg")
+                    @ImageField("ogImage", "تصویر اشتراک‌گذاری در تلگرام/واتساپ", Model.OgImagePath, "خودکار ۱۲۰۰×۶۳۰ برش داده می‌شود.", "1200/630", "/img/brand/og-image.png")
+                </div>
+            </div>
+
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-image ic text-success"></i>بنر، پس‌زمینه و فونت</h5></div>
+                <div class="a-card-body row g-3">
+                    @ImageField("heroImage", "عکس بنر اصلی صفحه اول", Model.HeroImagePath, "عکس افقی بزرگ؛ حداکثر ۱۹۲۰ پیکسل می‌شود. روی آن لایه رنگ بنر می‌افتد.", "16/9", "/img/hero-bg.svg")
+                    @ImageField("bgImage", "عکس پس‌زمینه کل سایت (اختیاری)", Model.BackgroundImagePath, "یک بافت یا عکس ملایم. خالی = فقط رنگ پس‌زمینه.", "16/9")
+                    <div class="col-sm-6">
+                        <label class="form-label">طرح روی بنر</label>
+                        <select class="form-select" asp-for="HeroDecor">
+                            <option value="grid">خطوط شطرنجی ملایم</option>
+                            <option value="blueprint">شطرنجی + نقشه فنی فلنج</option>
+                            <option value="none">بدون طرح</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">نمایش عکس پس‌زمینه</label>
+                        <select class="form-select" asp-for="BackgroundMode">
+                            <option value="cover">تمام‌صفحه و ثابت</option>
+                            <option value="repeat">تکرار (کاشی)</option>
+                        </select>
+                        <label class="form-label mt-2" for="BackgroundVeil">کم‌رنگی عکس پس‌زمینه: <b><span data-range-out="BackgroundVeil">@Model.BackgroundVeil</span>٪</b></label>
+                        <input type="range" class="form-range" min="0" max="95" step="5" asp-for="BackgroundVeil" />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">تم پیش‌فرض برای بازدیدکننده</label>
+                        <select class="form-select" asp-for="ThemeMode">
+                            <option value="auto">خودکار (مطابق گوشی/سیستم)</option>
+                            <option value="light">روشن</option>
+                            <option value="dark">تیره</option>
+                        </select>
+                        <div class="form-text">بازدیدکننده همیشه می‌تواند با دکمه ماه/خورشید عوضش کند.</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">فونت تیترها</label>
+                        <select class="form-select" asp-for="ThemeTitleFont" data-theme-var="ThemeTitleFont">
+                            <option value="Lalezar">لاله‌زار (تیتر ضخیم و فانتزی)</option>
+                            <option value="Vazirmatn">وزیرمتن (ساده و رسمی)</option>
+                        </select>
+                        <label class="form-label mt-2" for="ThemeRadius">گردی گوشه‌ها: <b><span data-range-out="ThemeRadius">@Model.ThemeRadius</span> پیکسل</b></label>
+                        <input type="range" class="form-range" min="0" max="32" step="2" asp-for="ThemeRadius" data-theme-var="ThemeRadius" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-aspect-ratio ic text-info"></i>عکس محصولات و انیمیشن‌ها</h5></div>
+                <div class="a-card-body row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label">نسبت ابعاد عکس محصول</label>
+                        <select class="form-select" asp-for="ProductImageRatio" data-theme-var="ProductImageRatio">
+                            <option value="1:1">مربع ۱:۱</option>
+                            <option value="4:3">افقی ۴:۳</option>
+                            <option value="3:4">عمودی ۳:۴</option>
+                            <option value="16:9">عریض ۱۶:۹</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">جا دادن عکس در کادر</label>
+                        <select class="form-select" asp-for="ProductImageFit" data-theme-var="ProductImageFit">
+                            @foreach (var f in ThemeCss.Fits) { <option value="@f">@fitText[f]</option> }
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <div class="alert alert-info small mb-0">
+                            <i class="bi bi-info-circle ic"></i>عکس‌هایی که از این به بعد برای محصولات آپلود شوند، در سرور خودکار به همین نسبت و اندازه (حداکثر ۱۲۰۰ پیکسل) درمی‌آیند و فشرده می‌شوند؛
+                            پس هر عکسی آپلود شود چیدمان سایت به هم نمی‌ریزد. عکس‌های قبلی هم در سایت با همین کادر نمایش داده می‌شوند.
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">انیمیشن ظاهر شدن هنگام اسکرول</label>
+                        <select class="form-select" asp-for="RevealAnimation" data-theme-var="RevealAnimation">
+                            @foreach (var r in ThemeCss.Reveals) { <option value="@r">@revealText[r]</option> }
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">افکت عکس‌ها با ماوس</label>
+                        <select class="form-select" asp-for="HoverEffect" data-theme-var="HoverEffect">
+                            @foreach (var h in ThemeCss.Hovers) { <option value="@h">@hoverText[h]</option> }
+                        </select>
+                    </div>
+                    <div class="col-12 small text-muted">در صفحه محصول، عکس با ماوس بزرگ‌نمایی می‌شود و با کلیک تمام‌صفحه با امکان زوم و ورق زدن باز می‌شود.</div>
+                </div>
+            </div>
+
+            <div class="a-card mb-4">
+                <div class="a-card-head"><h5><i class="bi bi-layout-text-window-reverse ic text-primary"></i>بخش‌های صفحه اصلی و منو</h5></div>
+                <div class="a-card-body row g-3">
+                    <div class="col-sm-6 col-lg-4"><div class="form-check form-switch"><input class="form-check-input" asp-for="ShowHeroSearch" /><label class="form-check-label" asp-for="ShowHeroSearch">جستجو و کلمات پرجستجو در بنر</label></div></div>
+                    <div class="col-sm-6 col-lg-4"><div class="form-check form-switch"><input class="form-check-input" asp-for="ShowStats" /><label class="form-check-label" asp-for="ShowStats">آمار (تعداد محصول، مشتری...)</label></div></div>
+                    <div class="col-sm-6 col-lg-4"><div class="form-check form-switch"><input class="form-check-input" asp-for="ShowCategories" /><label class="form-check-label" asp-for="ShowCategories">دسته‌بندی‌ها</label></div></div>
+                    <div class="col-sm-6 col-lg-4"><div class="form-check form-switch"><input class="form-check-input" asp-for="ShowFeatured" /><label class="form-check-label" asp-for="ShowFeatured">محصولات ویژه</label></div></div>
+                    <div class="col-sm-6 col-lg-4"><div class="form-check form-switch"><input class="form-check-input" asp-for="ShowWhyUs" /><label class="form-check-label" asp-for="ShowWhyUs">چرا ما؟</label></div></div>
+                    <div class="col-sm-6 col-lg-4"><div class="form-check form-switch"><input class="form-check-input" asp-for="ShowClients" /><label class="form-check-label" asp-for="ShowClients">اسلایدر مشتریان</label></div></div>
+                    <div class="col-sm-6 col-lg-4"><div class="form-check form-switch"><input class="form-check-input" asp-for="ShowDownloads" /><label class="form-check-label" asp-for="ShowDownloads">منوی «کاتالوگ و مستندات»</label></div></div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label class="form-label" asp-for="YearsOfExperience">سال تجربه (در آمار)</label>
+                        <input class="form-control" asp-for="YearsOfExperience" type="number" min="0" max="200" />
+                        <div class="form-text">صفر = نمایش داده نشود</div>
+                    </div>
+                    <div class="col-12 small text-muted"><i class="bi bi-fonts ic"></i>عنوان‌ها و توضیحات این بخش‌ها را در <a asp-action="Texts">متن‌های سایت</a> عوض کنید.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="a-card a-theme-preview-wrap">
+                <div class="a-card-head"><h5><i class="bi bi-eye ic text-success"></i>پیش‌نمایش زنده</h5></div>
+                <div class="a-card-body">
+                    <div class="a-theme-preview" id="themePreview">
+                        <div class="tp-top">۰۲۱-۱۲۳۴۵۶۷۸ · @Model.CompanyNameFa</div>
+                        <div class="tp-nav"><span class="tp-logo"><img src="@(Model.LogoPath ?? "/img/brand/logo-mark.svg")" alt="" data-preview-for="f_logo" /></span><b class="tp-brand">@Model.CompanyNameFa</b><span class="tp-links"><u>خانه</u> محصولات تماس</span></div>
+                        <div class="tp-hero"><b>تیتر بنر اصلی</b><span class="tp-btn-accent">جستجو</span></div>
+                        <div class="tp-body">
+                            <div class="tp-card"><div class="tp-img"><i class="bi bi-box-seam"></i></div><div class="tp-cbody"><b>نام محصول</b><span class="tp-price">۱۲۰٬۰۰۰</span><span class="tp-btn">افزودن</span></div></div>
+                            <div class="tp-card"><div class="tp-img"><i class="bi bi-camera"></i></div><div class="tp-cbody"><b>محصول دیگر</b><span class="tp-price">۹۵٬۰۰۰</span><span class="tp-btn">افزودن</span></div></div>
+                        </div>
+                        <div class="tp-foot">© @Model.CompanyNameFa</div>
+                    </div>
+                    <p class="small text-muted mt-3 mb-0">پیش‌نمایش تقریبی است؛ بعد از ذخیره، <a href="/" target="_blank" rel="noopener">سایت را باز کنید</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="position-sticky bottom-0 py-3 no-print" style="z-index:5">
+        <button class="btn btn-a btn-lg px-5 shadow"><i class="bi bi-check2-circle ic"></i>ذخیره ظاهر سایت</button>
+    </div>
+</form>

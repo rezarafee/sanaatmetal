@@ -1,8 +1,12 @@
 // قبل از رندر صفحه اجرا می‌شود تا تم بدون پرش اعمال شود
+// تم پیش‌فرض (data-default-theme روی html) از پنل: ظاهر سایت تعیین می‌شود؛ انتخاب خود بازدیدکننده اولویت دارد
 (function () {
+  var html = document.documentElement;
+  html.classList.add('js');
   try {
     var t = localStorage.getItem('sm-theme');
-    if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-bs-theme', t);
-  } catch (e) { document.documentElement.setAttribute('data-bs-theme', 'light'); }
+    var def = html.getAttribute('data-default-theme');
+    if (!t) t = def === 'light' || def === 'dark' ? def : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    html.setAttribute('data-bs-theme', t);
+  } catch (e) { html.setAttribute('data-bs-theme', 'light'); }
 })();

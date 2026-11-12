@@ -4,15 +4,15 @@
     var s = (SiteSettings)ViewBag.Settings;
     var showMoney = Can(Permissions.InvoicesView) || Can(Permissions.InvoicesCreate);
 }
-<div class="d-flex flex-wrap gap-2 mb-3 no-print">
+<div class="d-flex flex-wrap gap-2 mb-3 no-print inv-toolbar">
     <a class="btn btn-a" asp-action="Pdf" asp-route-id="@Model.Id"><i class="bi bi-filetype-pdf ic"></i>دانلود PDF</a>
     <button class="btn btn-soft" type="button" data-print><i class="bi bi-printer ic"></i>چاپ</button>
     @if (Can(Permissions.InvoicesEdit))
     {
         <a class="btn btn-soft-success" asp-action="Edit" asp-route-id="@Model.Id"><i class="bi bi-pencil ic"></i>ویرایش</a>
-        <form method="post" asp-action="SetStatus" asp-route-id="@Model.Id" class="d-flex gap-1">
-            <select class="form-select" name="status">@foreach (var st in Enum.GetValues<InvoiceStatus>()) { <option value="@st" selected="@(Model.Status == st)">@st.DisplayName()</option> }</select>
-            <button class="btn btn-soft">تغییر وضعیت</button>
+        <form method="post" asp-action="SetStatus" asp-route-id="@Model.Id" class="d-flex gap-1 inv-status">
+            <select class="form-select" name="status" aria-label="وضعیت">@foreach (var st in Enum.GetValues<InvoiceStatus>()) { <option value="@st" selected="@(Model.Status == st)">@st.DisplayName()</option> }</select>
+            <button class="btn btn-soft text-nowrap">تغییر وضعیت</button>
         </form>
     }
     @if (Can(Permissions.InvoicesDelete))
@@ -50,7 +50,7 @@
                     @foreach (var it in Model.Items.OrderBy(x => x.SortOrder))
                     {
                         n++;
-                        <tr><td>@N(n)</td><td>@it.Description</td><td>@N(it.Quantity)</td><td>@it.Unit</td>
+                        <tr><td>@N(n)</td><td class="inv-desc">@it.Description</td><td>@N(it.Quantity)</td><td>@it.Unit</td>
                             @if (showMoney) { <td class="num">@N(it.UnitPrice)</td><td class="num">@(it.DiscountAmount > 0 ? N(it.DiscountAmount) : "-")</td><td class="num fw-bold">@N(it.LineTotal)</td> }</tr>
                     }
                 </tbody>
@@ -63,7 +63,7 @@
                 @if (showMoney && Model.ChequeAmount > 0) { <div>چک: @N(Model.ChequeAmount) ریال @(Model.ChequeCount > 0 ? $"({N(Model.ChequeCount)} فقره)" : "") @(Model.ChequeDueDate.HasValue ? "— سررسید " + Fmt.FaDigits(Fmt.JalaliDateOnly(Model.ChequeDueDate)) : "")</div> }
                 @if (showMoney && Model.Cheques.Count > 0)
                 {
-                    <table class="table table-sm a-table mt-2 mb-2 cheque-list">
+                    <div class="table-responsive"><table class="table table-sm a-table mt-2 mb-2 cheque-list">
                         <thead><tr><th>#</th><th>مبلغ (ریال)</th><th>سررسید</th><th>شماره چک</th><th>بانک</th></tr></thead>
                         <tbody>
                             @for (var ci = 0; ci < Model.Cheques.Count; ci++)
@@ -72,7 +72,7 @@
                                 <tr class="@(ch.DueDate.Date < Fmt.ToLocal(DateTime.UtcNow).Date ? "text-muted" : "")"><td>@N(ci + 1)</td><td class="num fw-bold">@N(ch.Amount)</td><td>@Fmt.FaDigits(Fmt.JalaliDateOnly(ch.DueDate))</td><td class="ltr">@ch.Number</td><td>@ch.Bank</td></tr>
                             }
                         </tbody>
-                    </table>
+                    </table></div>
                 }
                 @if (!string.IsNullOrEmpty(Model.ChequeDetails)) { <div class="text-muted">@Model.ChequeDetails</div> }
                 @if (!string.IsNullOrEmpty(Model.Notes)) { <div class="mt-2"><b>توضیحات:</b> @Model.Notes</div> }

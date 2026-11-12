@@ -38,7 +38,7 @@ public class DocumentInput
 }
 
 [HasPermission(Permissions.CatalogView)]
-public class ProductsController(AppDbContext db, FileStorageService files, AuditService audit, PricingService pricing) : AdminControllerBase
+public class ProductsController(AppDbContext db, FileStorageService files, AuditService audit, PricingService pricing, SettingsService settings) : AdminControllerBase
 {
     public async Task<IActionResult> Index(string? q, int? cat, string? status, int page = 1)
     {
@@ -203,9 +203,11 @@ public class ProductsController(AppDbContext db, FileStorageService files, Audit
         if (product is null) return NotFound();
         var errors = new List<string>();
         var order = product.Images.Count == 0 ? 0 : product.Images.Max(i => i.SortOrder) + 1;
+        // همه عکس‌های محصول با نسبت ابعاد و حالت انتخاب‌شده در «ظاهر سایت» هم‌اندازه می‌شوند
+        var profile = ImageProfile.Product(await settings.GetAsync());
         foreach (var f in images.Take(20))
         {
-            var (path, err) = await files.SaveAsync(f, "products", UploadKind.Image);
+            var (path, err) = await files.SaveAsync(f, "products", UploadKind.Image, profile);
             if (err is not null) { errors.Add($"{f.FileName}: {err}"); continue; }
             product.Images.Add(new ProductImage
             {

@@ -224,4 +224,106 @@
 
   /* ---------- Auto submit filters ---------- */
   document.querySelectorAll('[data-autosubmit]').forEach(el => el.addEventListener('change', () => el.form.submit()));
+
+  /* ---------- انیمیشن ظاهر شدن هنگام اسکرول (نوعش از پنل: ظاهر سایت) ---------- */
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // کارت‌ها و آیتم‌هایی که کلاس reveal ندارند هم انیمیشن می‌گیرند
+  document.querySelectorAll('.sm-doc, .sm-cart-box, .sm-variants, .sm-gallery').forEach(el => { if (!el.closest('.reveal')) el.classList.add('reveal'); });
+  const reveals = [...document.querySelectorAll('.reveal')];
+  // تأخیر پله‌ای برای آیتم‌های کنار هم در یک ردیف
+  reveals.forEach(el => {
+    const sibs = el.parentElement ? [...el.parentElement.children].filter(c => c.classList.contains('reveal')) : [];
+    const i = sibs.indexOf(el);
+    if (i > 0) el.style.setProperty('--rd', ((i % 4) * 0.09).toFixed(2) + 's');
+  });
+  if (reduce || body.dataset.reveal === 'none' || !('IntersectionObserver' in window)) {
+    reveals.forEach(el => el.classList.add('in'));
+  } else {
+    const rio = new IntersectionObserver(es => es.forEach(en => {
+      if (en.isIntersecting) { en.target.classList.add('in'); rio.unobserve(en.target); }
+    }), { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    reveals.forEach(el => rio.observe(el));
+  }
+
+  /* ---------- عکس‌ها بعد از بارگذاری نرم ظاهر می‌شوند ---------- */
+  const markLoaded = img => img.classList.add('loaded');
+  document.querySelectorAll('.sm-card-img img, .sm-cat-img img, .sm-gallery img').forEach(img => {
+    if (img.complete) markLoaded(img);
+    else { img.addEventListener('load', () => markLoaded(img), { once: true }); img.addEventListener('error', () => markLoaded(img), { once: true }); }
+  });
+
+  /* ---------- افکت کج شدن سه‌بعدی کارت‌ها همراه ماوس ---------- */
+  if (body.dataset.hover === 'tilt' && !reduce && window.matchMedia('(hover: hover)').matches) {
+    document.addEventListener('pointermove', e => {
+      const card = e.target.closest && e.target.closest('.sm-card, .sm-cat');
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      card.style.setProperty('--ry', (x * 10).toFixed(2) + 'deg');
+      card.style.setProperty('--rx', (-y * 10).toFixed(2) + 'deg');
+    }, { passive: true });
+    document.addEventListener('pointerout', e => {
+      const card = e.target.closest && e.target.closest('.sm-card, .sm-cat');
+      if (card && !card.contains(e.relatedTarget)) { card.style.removeProperty('--rx'); card.style.removeProperty('--ry'); }
+    });
+  }
+
+  /* ---------- گالری محصول: ذره‌بین با ماوس و نمایش تمام‌صفحه ---------- */
+  const gallery = document.querySelector('.sm-gallery .main');
+  if (gallery) {
+    if (!reduce && window.matchMedia('(hover: hover) and (min-width: 992px)').matches) {
+      gallery.addEventListener('pointermove', e => {
+        const slide = e.target.closest('.swiper-slide');
+        const img = slide && slide.querySelector('img');
+        if (!img) return;
+        const r = slide.getBoundingClientRect();
+        img.style.transformOrigin = ((e.clientX - r.left) / r.width * 100).toFixed(1) + '% ' + ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%';
+        slide.classList.add('zooming');
+      });
+      gallery.addEventListener('pointerleave', () => gallery.querySelectorAll('.zooming').forEach(s => s.classList.remove('zooming')));
+    }
+    gallery.addEventListener('click', e => {
+      const slide = e.target.closest('.swiper-slide');
+      if (!slide) return;
+      const imgs = [...gallery.querySelectorAll('.swiper-slide img')];
+      openLightbox(imgs.map(i => ({ src: i.currentSrc || i.src, alt: i.alt })), Math.max(0, imgs.indexOf(slide.querySelector('img'))));
+    });
+  }
+
+  function openLightbox(items, start) {
+    if (!items.length) return;
+    const box = document.createElement('div');
+    box.className = 'sm-lightbox';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    box.innerHTML = '<button type="button" class="sm-lightbox-close" aria-label="' + esc(T.close || 'Close') + '"><i class="bi bi-x-lg"></i></button>' +
+      '<div class="sm-lightbox-count"></div><div class="swiper"><div class="swiper-wrapper">' +
+      items.map(it => '<div class="swiper-slide"><div class="swiper-zoom-container"><img src="' + esc(it.src) + '" alt="' + esc(it.alt) + '"></div></div>').join('') +
+      '</div>' + (items.length > 1 ? '<div class="swiper-button-prev"></div><div class="swiper-button-next"></div>' : '') + '</div>';
+    document.body.appendChild(box);
+    document.body.style.overflow = 'hidden';
+    const count = box.querySelector('.sm-lightbox-count');
+    const setCount = i => { count.textContent = items.length > 1 ? nf.format(i + 1) + ' / ' + nf.format(items.length) : ''; };
+    let sw = null;
+    if (window.Swiper) {
+      sw = new Swiper(box.querySelector('.swiper'), {
+        initialSlide: start, zoom: { maxRatio: 3 }, keyboard: { enabled: true },
+        navigation: { nextEl: box.querySelector('.swiper-button-next'), prevEl: box.querySelector('.swiper-button-prev') },
+        on: { slideChange: s => setCount(s.activeIndex) },
+      });
+    }
+    setCount(start);
+    requestAnimationFrame(() => box.classList.add('show'));
+    const close = () => {
+      box.classList.remove('show');
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+      setTimeout(() => { sw && sw.destroy(); box.remove(); }, 300);
+    };
+    const onKey = e => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    box.querySelector('.sm-lightbox-close').addEventListener('click', close);
+    box.addEventListener('click', e => { if (e.target === box || e.target.classList.contains('swiper-slide')) close(); });
+    box.querySelector('.sm-lightbox-close').focus();
+  }
 })();
