@@ -278,3 +278,10 @@ jdp-container .jdp-btn-today, jdp-container .jdp-btn-close, jdp-container .jdp-b
 
 /* زیرعنوان داخل کارت تنظیمات */
 .a-subhead { font-weight: 800; font-size: .9rem; color: var(--a-muted); border-bottom: 1px dashed var(--a-border); padding-bottom: .4rem; margin-top: .3rem; }
+
+/* ---------- Product bulk import ---------- */
+.g-red { --tone: #dc2626; }
+[data-bs-theme="dark"] .g-red { --tone: #f87171; }
+.imp-steps { padding-inline-start: 1.2rem; margin-bottom: 1.25rem; }
+.imp-steps li { margin-bottom: .35rem; }
+.a-table td.imp-help { white-space: normal; min-width: 14rem; }
