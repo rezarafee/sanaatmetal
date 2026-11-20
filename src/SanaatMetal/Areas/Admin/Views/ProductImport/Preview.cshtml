@@ -1,0 +1,97 @@
+@model ImportPreview
+@{
+    ViewData["Title"] = "پیش‌نمایش ورود محصولات";
+    const int maxErrors = 500, maxProducts = 300;
+    var ok = Model.NewProducts + Model.UpdatedProducts;
+}
+<div class="a-card mb-4">
+    <div class="a-card-head">
+        <h5><i class="bi bi-clipboard-check ic text-primary"></i>پیش‌نمایش: <span class="ltr">@Model.FileName</span></h5>
+        <a class="btn btn-soft btn-sm" asp-action="Index"><i class="bi bi-arrow-right ic"></i>فایل دیگر</a>
+    </div>
+    <div class="a-card-body">
+        <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-xl-6">
+            <div class="col"><div class="a-stat g-slate"><small>ردیف‌های فایل</small><div class="v">@N(Model.RowCount)</div></div></div>
+            <div class="col"><div class="a-stat g-green"><small>محصول جدید</small><div class="v">@N(Model.NewProducts)</div></div></div>
+            <div class="col"><div class="a-stat g-purple"><small>محصول به‌روزرسانی</small><div class="v">@N(Model.UpdatedProducts)</div></div></div>
+            <div class="col"><div class="a-stat g-slate"><small>سایز جدید / به‌روز</small><div class="v">@N(Model.VariantsNew) / @N(Model.VariantsUpdated)</div></div></div>
+            <div class="col"><div class="a-stat g-orange"><small>تغییر قیمت</small><div class="v">@N(Model.PriceChanges)</div></div></div>
+            <div class="col"><div class="a-stat @(Model.ErrorProducts > 0 ? "g-red" : "g-slate")"><small>محصول دارای خطا</small><div class="v">@N(Model.ErrorProducts)</div></div></div>
+        </div>
+
+        @foreach (var w in Model.Warnings) { <div class="alert alert-warning mt-3 mb-0"><i class="bi bi-exclamation-triangle ic"></i>@w</div> }
+        @if (Model.UnknownHeaders.Count > 0)
+        {
+            <div class="alert alert-secondary mt-3 mb-0 text-break"><i class="bi bi-info-circle ic"></i>این ستون‌ها شناخته نشد و نادیده گرفته می‌شود: <b>@string.Join("، ", Model.UnknownHeaders)</b></div>
+        }
+        @if (Model.NewCategories.Count > 0)
+        {
+            <div class="alert alert-info mt-3 mb-0 text-break"><i class="bi bi-diagram-3 ic"></i>@N(Model.NewCategories.Count) دسته‌بندی جدید ساخته می‌شود: <b>@string.Join("، ", Model.NewCategories.Take(40))</b>@(Model.NewCategories.Count > 40 ? " ..." : "")</div>
+        }
+        @if (Model.NewMaterials.Count > 0)
+        {
+            <div class="alert alert-info mt-3 mb-0 text-break"><i class="bi bi-layers ic"></i>@N(Model.NewMaterials.Count) متریال جدید ساخته می‌شود: <b>@string.Join("، ", Model.NewMaterials.Take(40))</b>@(Model.NewMaterials.Count > 40 ? " ..." : "")</div>
+        }
+
+        <form method="post" asp-action="Commit" class="mt-4 d-flex flex-wrap gap-2 align-items-center"
+              data-confirm="@N(ok) محصول ثبت شود؟ (@N(Model.NewProducts) جدید، @N(Model.UpdatedProducts) به‌روزرسانی)">
+            <input type="hidden" name="token" value="@Model.Token" />
+            @if (ok > 0)
+            {
+                <button class="btn btn-a px-4"><i class="bi bi-check2-circle ic"></i>ثبت نهایی @N(ok) محصول</button>
+            }
+            @if (Model.ErrorProducts > 0)
+            {
+                <span class="small text-danger">@N(Model.ErrorProducts) محصول دارای خطا ثبت نمی‌شود. می‌توانید خطاها را در فایل درست کنید و دوباره بارگذاری کنید.</span>
+            }
+        </form>
+    </div>
+</div>
+
+@if (Model.Errors.Count > 0)
+{
+    <div class="a-card mb-4">
+        <div class="a-card-head"><h5><i class="bi bi-x-octagon ic text-danger"></i>خطاها (@N(Model.Errors.Count))</h5></div>
+        <div class="table-responsive">
+            <table class="table a-table table-sm mb-0">
+                <thead><tr><th>ردیف اکسل</th><th>کد کالا</th><th>خطا</th></tr></thead>
+                <tbody>
+                    @foreach (var e in Model.Errors.Take(maxErrors))
+                    {
+                        <tr><td>@N(e.Line)</td><td class="ltr">@e.Code</td><td class="imp-help text-break">@e.Message</td></tr>
+                    }
+                </tbody>
+            </table>
+            @if (Model.Errors.Count > maxErrors) { <div class="p-3 small text-muted">@N(Model.Errors.Count - maxErrors) خطای دیگر نمایش داده نشد.</div> }
+        </div>
+    </div>
+}
+
+<div class="a-card">
+    <div class="a-card-head"><h5><i class="bi bi-box-seam ic text-primary"></i>محصولات فایل (@N(Model.Products.Count))</h5></div>
+    <div class="table-responsive">
+        <table class="table a-table table-sm table-hover mb-0">
+            <thead><tr><th>ردیف</th><th>کد کالا</th><th>نام</th><th>دسته</th><th>وضعیت</th><th>سایز جدید</th><th>سایز به‌روز</th><th>تغییر قیمت</th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.Products.OrderByDescending(p => p.HasError).Take(maxProducts))
+                {
+                    <tr>
+                        <td>@N(p.FirstLine)</td>
+                        <td class="ltr">@p.Code</td>
+                        <td class="imp-help">@p.Name</td>
+                        <td>@p.Category</td>
+                        <td>
+                            @if (p.HasError) { <span class="pill pill-red">خطا</span> }
+                            else if (p.IsNew) { <span class="pill pill-green">جدید</span> }
+                            else { <span class="pill pill-blue">به‌روزرسانی</span> }
+                        </td>
+                        <td>@N(p.VariantsNew)</td>
+                        <td>@N(p.VariantsUpdated)</td>
+                        <td>@N(p.PriceChanges)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (Model.Products.Count > maxProducts) { <div class="p-3 small text-muted">فقط @N(maxProducts) محصول اول نمایش داده شد؛ همه @N(Model.Products.Count) محصول ثبت می‌شوند.</div> }
+    </div>
+</div>

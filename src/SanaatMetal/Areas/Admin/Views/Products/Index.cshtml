@@ -7,7 +7,13 @@
 <div class="a-card">
     <div class="a-card-head">
         <h5><i class="bi bi-box-seam ic text-primary"></i>محصولات <span class="text-muted small">(@N((int)ViewBag.Total))</span></h5>
-        @if (Can(Permissions.CatalogManage)) { <a class="btn btn-a btn-sm" asp-action="Create"><i class="bi bi-plus-lg ic"></i>محصول جدید</a> }
+        @if (Can(Permissions.CatalogManage))
+        {
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-soft btn-sm" asp-controller="ProductImport" asp-action="Index"><i class="bi bi-file-earmark-spreadsheet ic"></i>ورود از اکسل</a>
+                <a class="btn btn-a btn-sm" asp-action="Create"><i class="bi bi-plus-lg ic"></i>محصول جدید</a>
+            </div>
+        }
     </div>
     <form class="a-card-body border-bottom row g-2" method="get">
         <div class="col-md-5"><input class="form-control" name="q" value="@ViewBag.Q" placeholder="جستجو نام یا کد کالا..." /></div>

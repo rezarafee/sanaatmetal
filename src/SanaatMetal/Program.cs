@@ -134,6 +134,7 @@ builder.Services.AddHttpClient(PleskMailService.HttpClientName, c => c.Timeout =
 builder.Services.AddScoped<PleskMailService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<PricingService>();
+builder.Services.AddScoped<ProductImportService>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<ExportService>();
 

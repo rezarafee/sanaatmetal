@@ -1,0 +1,56 @@
+@{
+    ViewData["Title"] = "ورود گروهی محصولات";
+    bool canPrice = ViewBag.CanPrice;
+    var cols = ProductImportService.VisibleColumns(canPrice).ToList();
+}
+<div class="row g-4">
+    <div class="col-12 col-lg-5">
+        <div class="a-card h-100">
+            <div class="a-card-head"><h5><i class="bi bi-file-earmark-arrow-up ic text-primary"></i>بارگذاری فایل اکسل یا CSV</h5></div>
+            <div class="a-card-body">
+                <ol class="imp-steps">
+                    <li>فایل نمونه را دانلود و ردیف‌های نمونه را با کالاهای خودتان جایگزین کنید.</li>
+                    <li>فایل را این‌جا بارگذاری کنید. <b>هنوز چیزی ذخیره نمی‌شود.</b></li>
+                    <li>در پیش‌نمایش خطاها را ببینید و در صورت درستی، «ثبت نهایی» را بزنید.</li>
+                </ol>
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <a class="btn btn-soft-primary btn-sm" asp-action="Template"><i class="bi bi-file-earmark-excel ic"></i>فایل نمونه اکسل</a>
+                    <a class="btn btn-soft btn-sm" asp-action="Template" asp-route-format="csv"><i class="bi bi-filetype-csv ic"></i>نمونه CSV</a>
+                    <a class="btn btn-soft btn-sm" asp-action="Export"><i class="bi bi-download ic"></i>خروجی محصولات فعلی</a>
+                </div>
+                <form method="post" asp-action="Preview" enctype="multipart/form-data">
+                    <label class="form-label" for="impFile">فایل محصولات (xlsx یا csv، حداکثر ۱۵ مگابایت)</label>
+                    <input class="form-control" type="file" id="impFile" name="file" accept=".xlsx,.csv,.txt" required />
+                    <button class="btn btn-a mt-3 w-100"><i class="bi bi-search ic"></i>بررسی و پیش‌نمایش</button>
+                </form>
+                <p class="small text-muted mt-3 mb-0">
+                    «خروجی محصولات فعلی» همه کالاها را با همین قالب می‌دهد؛ می‌توانید در اکسل ویرایش کنید و دوباره بارگذاری کنید.
+                    محصول‌ها با «کد کالا» شناخته می‌شوند، پس بارگذاری دوباره محصول تکراری نمی‌سازد.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-7">
+        <div class="a-card h-100">
+            <div class="a-card-head"><h5><i class="bi bi-table ic text-success"></i>ستون‌های فایل</h5></div>
+            <div class="table-responsive">
+                <table class="table a-table mb-0">
+                    <thead><tr><th>ستون</th><th>الزامی</th><th>توضیح</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in cols)
+                        {
+                            <tr>
+                                <td class="fw-bold">@c.Header</td>
+                                <td class="text-nowrap">@if (c.Required) { <span class="pill pill-orange">@(c.Key == "Code" ? "همیشه" : "محصول جدید")</span> }</td>
+                                <td class="imp-help">@c.Help</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="a-card-body border-top small">
+                @foreach (var line in ProductImportService.GuideLines.Skip(1)) { <div class="mb-1">@line</div> }
+            </div>
+        </div>
+    </div>
+</div>
