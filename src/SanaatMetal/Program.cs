@@ -135,6 +135,7 @@ builder.Services.AddScoped<PleskMailService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<PricingService>();
 builder.Services.AddScoped<ProductImportService>();
+builder.Services.AddScoped<ProductBulkService>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<ExportService>();
 

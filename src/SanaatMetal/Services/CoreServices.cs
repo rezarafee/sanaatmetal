@@ -141,6 +141,28 @@ public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageServ
         }
         catch (Exception ex) { log.LogWarning(ex, "Deleting stored upload failed: {Path}", webPath); }
     }
+
+    /// <summary>حذف تعداد زیادی فایل (مثلاً بعد از حذف گروهی محصولات) با چند کوئری دسته‌ای به‌جای یک کوئری برای هر فایل</summary>
+    public async Task DeleteManyAsync(IReadOnlyCollection<string> webPaths)
+    {
+        var list = webPaths.Where(p => !string.IsNullOrEmpty(p) && p.StartsWith("/uploads/")).Distinct().ToList();
+        if (list.Count == 0) return;
+        var root = System.IO.Path.GetFullPath(System.IO.Path.Combine(env.WebRootPath, "uploads"));
+        foreach (var webPath in list)
+        {
+            var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(env.WebRootPath, webPath.TrimStart('/')));
+            try { if (full.StartsWith(root) && File.Exists(full)) File.Delete(full); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { log.LogWarning(ex, "Deleting upload failed: {Path}", full); }
+        }
+        try
+        {
+            using var scope = scopes.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            foreach (var part in list.Chunk(500))
+                await db.StoredFiles.Where(f => part.Contains(f.Path)).ExecuteDeleteAsync();
+        }
+        catch (Exception ex) { log.LogWarning(ex, "Deleting stored uploads failed ({Count} files)", list.Count); }
+    }
 }
 
 public class EmailService(SettingsService settings, ILogger<EmailService> log)

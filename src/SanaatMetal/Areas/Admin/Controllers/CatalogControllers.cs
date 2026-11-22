@@ -10,7 +10,7 @@ using SanaatMetal.ViewComponents;
 namespace SanaatMetal.Areas.Admin.Controllers;
 
 [HasPermission(Permissions.CatalogManage)]
-public class CategoriesController(AppDbContext db, FileStorageService files, AuditService audit, IMemoryCache cache) : AdminControllerBase
+public class CategoriesController(AppDbContext db, FileStorageService files, AuditService audit, IMemoryCache cache, ProductBulkService bulk) : AdminControllerBase
 {
     public async Task<IActionResult> Index()
     {
@@ -66,7 +66,7 @@ public class CategoriesController(AppDbContext db, FileStorageService files, Aud
         if (c is null) return NotFound();
         if (await db.Products.AnyAsync(p => p.CategoryId == id) || await db.Categories.AnyAsync(x => x.ParentId == id))
         {
-            Error("این دسته‌بندی دارای محصول یا زیرمجموعه است و حذف نمی‌شود. می‌توانید آن را غیرفعال کنید.");
+            Error("این دسته‌بندی دارای محصول یا زیرمجموعه است و حذف نمی‌شود. می‌توانید آن را غیرفعال کنید یا از دکمه «حذف محصولات دسته» استفاده کنید.");
             return RedirectToAction(nameof(Index));
         }
         db.Categories.Remove(c);
@@ -75,6 +75,82 @@ public class CategoriesController(AppDbContext db, FileStorageService files, Aud
         files.Delete(c.ImagePath);
         cache.Remove(NavCategoriesViewComponent.CacheKey);
         Success("دسته‌بندی حذف شد.");
+        return RedirectToAction(nameof(Index));
+    }
+
+    // ---------------- حذف گروهی محصولات یک دسته ----------------
+    public class DeleteProductsVm
+    {
+        public Category Category { get; set; } = null!;
+        public List<(Category Cat, int Products)> Parts { get; set; } = new();
+        public ProductBulkService.DeleteResult Stats { get; set; } = null!;
+    }
+
+    /// <summary>دسته و زیرمجموعه‌هایش (درخت فقط یک سطح است ولی برای اطمینان همه نسل‌ها جمع می‌شوند)</summary>
+    private async Task<List<int>> TreeIds(int id)
+    {
+        var all = await db.Categories.AsNoTracking().Select(c => new { c.Id, c.ParentId }).ToListAsync();
+        var result = new List<int> { id };
+        for (var i = 0; i < result.Count; i++)
+            result.AddRange(all.Where(c => c.ParentId == result[i] && !result.Contains(c.Id)).Select(c => c.Id));
+        return result;
+    }
+
+    /// <summary>عربی/فارسی (ي/ی، ك/ک) و فاصله‌ها یکسان شوند تا تایپ نام دسته برای تأیید راحت باشد</summary>
+    private static string NormName(string? s) => string.Join(' ', (s ?? "").Replace('ي', 'ی').Replace('ك', 'ک').Replace('\u200c', ' ')
+        .Split(' ', StringSplitOptions.RemoveEmptyEntries));
+
+    public async Task<IActionResult> DeleteProducts(int id)
+    {
+        var c = await db.Categories.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        if (c is null) return NotFound();
+        var tree = await TreeIds(id);
+        var cats = await db.Categories.AsNoTracking().Where(x => tree.Contains(x.Id)).ToListAsync();
+        var counts = await db.Products.Where(p => tree.Contains(p.CategoryId)).GroupBy(p => p.CategoryId)
+            .Select(g => new { g.Key, C = g.Count() }).ToDictionaryAsync(x => x.Key, x => x.C);
+        return View(new DeleteProductsVm
+        {
+            Category = c,
+            Parts = cats.OrderBy(x => x.Id == id ? 0 : 1).ThenBy(x => x.SortOrder).Select(x => (x, counts.GetValueOrDefault(x.Id))).ToList(),
+            Stats = await bulk.PreviewAsync(db.Products.Where(p => tree.Contains(p.CategoryId))),
+        });
+    }
+
+    [HttpPost, ActionName("DeleteProducts")]
+    public async Task<IActionResult> DeleteProductsConfirmed(int id, string? confirmName, bool deleteCategory)
+    {
+        var c = await db.Categories.FindAsync(id);
+        if (c is null) return NotFound();
+        if (NormName(confirmName) != NormName(c.NameFa))
+        {
+            Error($"برای تأیید باید نام دسته را دقیقاً بنویسید: «{c.NameFa}»");
+            return RedirectToAction(nameof(DeleteProducts), new { id });
+        }
+        var tree = await TreeIds(id);
+        var r = await bulk.DeleteAsync(db.Products.Where(p => tree.Contains(p.CategoryId)));
+        var msg = $"{Fmt.Number(r.Products)} محصول با {Fmt.Number(r.Variants)} سایز، {Fmt.Number(r.Images)} عکس و {Fmt.Number(r.Documents)} مستند حذف شد.";
+        var details = $"{r.Products} محصول، {r.Variants} سایز، {r.Images} عکس، {r.Documents} مستند؛ سطرهای فاکتور جداشده: {r.InvoiceLines}، سطرهای سفارش: {r.OrderLines}";
+        if (deleteCategory)
+        {
+            var cats = await db.Categories.Where(x => tree.Contains(x.Id)).ToListAsync();
+            var images = cats.Select(x => x.ImagePath).Where(x => x is not null).Cast<string>().ToList();
+            // اول زیرمجموعه‌ها (کلید والد Restrict است)، بعد خود دسته
+            db.Categories.RemoveRange(cats.Where(x => x.Id != id));
+            await db.SaveChangesAsync();
+            db.Categories.Remove(c);
+            details += $" — دسته و {cats.Count - 1} زیرمجموعه هم حذف شد";
+            msg += cats.Count > 1 ? $" دسته «{c.NameFa}» و {Fmt.Number(cats.Count - 1)} زیرمجموعه‌اش هم حذف شدند." : $" دسته «{c.NameFa}» هم حذف شد.";
+            audit.Log("حذف گروهی محصولات دسته", "Category", id, $"«{c.NameFa}»: {details}");
+            await db.SaveChangesAsync();
+            await files.DeleteManyAsync(images);
+        }
+        else
+        {
+            audit.Log("حذف گروهی محصولات دسته", "Category", id, $"«{c.NameFa}»: {details}");
+            await db.SaveChangesAsync();
+        }
+        cache.Remove(NavCategoriesViewComponent.CacheKey);
+        Success(msg + " فاکتورها و سفارش‌های قبلی دست‌نخورده باقی می‌مانند.");
         return RedirectToAction(nameof(Index));
     }
 }
