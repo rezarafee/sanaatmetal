@@ -422,4 +422,57 @@
     draw();
     document.addEventListener('themechange', draw);
   }
+  /* ---------- عملیات گروهی محصولات (تیک‌زدن، «همه نتایج فیلتر»، حذف/فعال/غیرفعال/انتقال) ---------- */
+  const bulk = $('form[data-bulk]');
+  if (bulk) {
+    const rows = $$('input[data-bulk-row]');
+    const pageBox = $('input[data-bulk-page]');
+    const allInput = $('[data-bulk-all]', bulk);
+    const opInput = $('[data-bulk-op-input]', bulk);
+    const countEl = $('[data-bulk-count]', bulk);
+    const selAll = $('[data-bulk-select-all]', bulk), clearAll = $('[data-bulk-clear]', bulk);
+    const target = $('select[name="targetCategoryId"]', bulk);
+    const total = +bulk.dataset.total || 0;
+    let all = false;
+    const picked = () => rows.filter(r => r.checked).length;
+    const count = () => all ? total : picked();
+    const update = () => {
+      const n = picked(), c = count();
+      if (pageBox) { pageBox.checked = n > 0 && n === rows.length; pageBox.indeterminate = n > 0 && n < rows.length; }
+      allInput.value = all ? 'true' : 'false';
+      bulk.classList.toggle('has-sel', c > 0);
+      countEl.textContent = c === 0 ? 'هیچ محصولی انتخاب نشده'
+        : all ? `همه ${fmt(total)} محصول نتیجه فیلتر انتخاب شده‌اند` : `${fmt(c)} محصول انتخاب شده`;
+      selAll?.classList.toggle('d-none', all || n === 0 || n !== rows.length);
+      clearAll?.classList.toggle('d-none', !all);
+      $$('[data-bulk-op]', bulk).forEach(b => { b.disabled = c === 0 || (b.hasAttribute('data-bulk-needs-target') && !target.value); });
+    };
+    rows.forEach(r => r.addEventListener('change', () => { all = false; update(); }));
+    pageBox?.addEventListener('change', () => { rows.forEach(r => { r.checked = pageBox.checked; }); all = false; update(); });
+    selAll?.addEventListener('click', () => { all = true; update(); });
+    clearAll?.addEventListener('click', () => { all = false; rows.forEach(r => { r.checked = false; }); update(); });
+    target?.addEventListener('change', update);
+    const msgs = {
+      delete: n => `${n} محصول با همه سایزها، قیمت‌ها، عکس‌ها و مستنداتشان برای همیشه حذف شوند؟ فاکتورها و سفارش‌های قبلی دست‌نخورده می‌مانند.`,
+      activate: n => `${n} محصول فعال شوند؟`,
+      deactivate: n => `${n} محصول غیرفعال (مخفی از سایت) شوند؟`,
+      move: n => `${n} محصول به دسته «${target.options[target.selectedIndex].text.replace(/^— /, '')}» منتقل شوند؟`,
+    };
+    $$('[data-bulk-op]', bulk).forEach(b => b.addEventListener('click', () => {
+      const op = b.dataset.bulkOp;
+      opInput.value = op;
+      bulk.dataset.confirmed = '';
+      bulk.dataset.confirm = msgs[op](fmt(count()));
+      bulk.requestSubmit();
+    }));
+    update();
+  }
+
+  /* ---------- تأیید با تایپ نام (مثلاً حذف محصولات یک دسته) ---------- */
+  $$('input[data-match-confirm]').forEach(inp => {
+    const norm = s => String(s || '').replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/‌/g, ' ').trim().split(/\s+/).join(' ');
+    const btn = $(inp.dataset.matchTarget);
+    const check = () => { if (btn) btn.disabled = norm(inp.value) !== norm(inp.dataset.matchConfirm); };
+    inp.addEventListener('input', check); check();
+  });
 })();

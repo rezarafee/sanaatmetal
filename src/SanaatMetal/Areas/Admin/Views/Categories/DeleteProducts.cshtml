@@ -1,0 +1,60 @@
+@model SanaatMetal.Areas.Admin.Controllers.CategoriesController.DeleteProductsVm
+@{
+    ViewData["Title"] = "حذف محصولات دسته";
+    var c = Model.Category;
+    var s = Model.Stats;
+    var subs = Model.Parts.Count - 1;
+}
+<div class="row g-4 justify-content-center">
+    <div class="col-xl-8">
+        <div class="a-card">
+            <div class="a-card-head">
+                <h5><i class="bi bi-trash3 ic text-danger"></i>حذف همه محصولات دسته «@c.NameFa»</h5>
+                <a class="btn btn-soft btn-sm" asp-action="Index"><i class="bi bi-arrow-right ic"></i>بازگشت</a>
+            </div>
+            <div class="a-card-body">
+                @if (s.Products == 0)
+                {
+                    <div class="a-empty"><i class="bi bi-box"></i>این دسته@(subs > 0 ? " و زیرمجموعه‌هایش" : "") محصولی ندارد.</div>
+                }
+                else
+                {
+                    <div class="alert alert-danger small"><i class="bi bi-exclamation-octagon ic"></i>این کار برگشت‌پذیر نیست. محصولات با همه سایزها، قیمت‌ها، عکس‌ها و مستنداتشان برای همیشه پاک می‌شوند.</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6 col-md-3"><div class="bulk-stat"><b>@N(s.Products)</b><span>محصول</span></div></div>
+                        <div class="col-6 col-md-3"><div class="bulk-stat"><b>@N(s.Variants)</b><span>سایز و قیمت</span></div></div>
+                        <div class="col-6 col-md-3"><div class="bulk-stat"><b>@N(s.Images)</b><span>عکس</span></div></div>
+                        <div class="col-6 col-md-3"><div class="bulk-stat"><b>@N(s.Documents)</b><span>مستند</span></div></div>
+                    </div>
+                    @if (subs > 0)
+                    {
+                        <div class="small text-muted mb-1">شامل زیرمجموعه‌ها:</div>
+                        <ul class="small mb-3">
+                            @foreach (var (cat, n) in Model.Parts)
+                            {
+                                <li>@cat.NameFa: @N(n) محصول</li>
+                            }
+                        </ul>
+                    }
+                    @if (s.InvoiceLines + s.OrderLines > 0)
+                    {
+                        <div class="alert alert-info small"><i class="bi bi-receipt ic"></i>
+                            @N(s.InvoiceLines) سطر فاکتور و @N(s.OrderLines) سطر سفارش به این محصولات اشاره دارند. این فاکتورها و سفارش‌ها خراب نمی‌شوند:
+                            نام کالا، سایز، مقدار و مبلغ در خود فاکتور ذخیره شده و فقط اتصالش به کاتالوگ برداشته می‌شود.
+                            اگر می‌خواهید محصولات فقط از سایت مخفی شوند، به‌جای حذف از <a asp-controller="Products" asp-action="Index" asp-route-cat="@c.Id">لیست محصولات</a> آن‌ها را غیرفعال کنید.
+                        </div>
+                    }
+                }
+                <form method="post" asp-action="DeleteProducts" asp-route-id="@c.Id" class="mt-3">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="deleteCategory" value="true" id="delCat" checked="@(s.Products == 0)" />
+                        <label class="form-check-label" for="delCat">خود دسته «@c.NameFa»@(subs > 0 ? $" و {N(subs)} زیرمجموعه‌اش" : "") هم حذف شود</label>
+                    </div>
+                    <label class="form-label" for="confirmName">برای تأیید، نام دسته را بنویسید: <b class="text-danger">@c.NameFa</b></label>
+                    <input class="form-control mb-3" id="confirmName" name="confirmName" autocomplete="off" required data-match-confirm="@c.NameFa" data-match-target="#delBtn" />
+                    <button class="btn btn-danger" id="delBtn" disabled><i class="bi bi-trash3 ic"></i>@(s.Products > 0 ? $"حذف {N(s.Products)} محصول" : "حذف دسته")</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
