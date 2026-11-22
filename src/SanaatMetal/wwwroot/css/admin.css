@@ -306,3 +306,30 @@ jdp-container .jdp-btn-today, jdp-container .jdp-btn-close, jdp-container .jdp-b
   .bulk-move { flex: 1 1 100%; }
   .bulk-move .form-select { max-width: none; }
 }
+
+/* ---------- صفحه‌بندی (فقط صفحه‌های نزدیک؛ با تعداد زیاد از عرض بیرون نمی‌زند) ---------- */
+.a-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .6rem 1.2rem; }
+.a-pager .pagination { flex-wrap: wrap; justify-content: center; gap: .25rem; }
+.a-pager .page-link { min-width: 36px; height: 36px; display: inline-grid; place-items: center; padding: 0 .55rem; border-radius: 10px !important;
+  border: 1px solid var(--a-border); background: var(--a-surface); color: var(--a-text); font-weight: 700; font-size: .85rem; }
+.a-pager .page-link:hover { background: var(--a-surface-2); color: var(--a-primary); }
+.a-pager .active .page-link { background: var(--a-primary); border-color: var(--a-primary); color: #fff; }
+.a-pager .disabled .page-link { opacity: .45; background: transparent; }
+.a-pager-jump { display: flex; align-items: center; gap: .4rem; font-size: .82rem; color: var(--a-muted); white-space: nowrap; }
+.a-pager-jump .form-control { width: 72px; text-align: center; }
+
+/* ---------- چک‌باکس‌های انتخاب گروهی ---------- */
+.bulk-check .form-check-input { width: 1.25rem; height: 1.25rem; border-radius: 7px; border: 2px solid color-mix(in srgb, var(--a-muted) 55%, transparent);
+  background-color: var(--a-surface); box-shadow: none; transition: background-color .15s, border-color .15s, box-shadow .15s, transform .12s; }
+.bulk-check .form-check-input:hover { border-color: var(--a-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--a-primary) 14%, transparent); }
+.bulk-check .form-check-input:focus { border-color: var(--a-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--a-primary) 22%, transparent); }
+.bulk-check .form-check-input:checked, .bulk-check .form-check-input:indeterminate { background-color: var(--a-primary); border-color: var(--a-primary); }
+.bulk-check .form-check-input:checked { animation: chkPop .22s ease; }
+@keyframes chkPop { 50% { transform: scale(1.18); } }
+.a-table tbody tr:has(.bulk-check input:checked) > td { background: color-mix(in srgb, var(--a-accent) 11%, transparent); }
+.a-table tbody tr:has(.bulk-check input:checked) > td:first-child { box-shadow: inset -3px 0 0 var(--a-accent); }
+@media (prefers-reduced-motion: reduce) { .bulk-check .form-check-input:checked { animation: none; } }
+
+/* شبکه ایمنی: هیچ محتوای عریضی نباید منوی کناری را از جایش هل بدهد */
+.a-main { overflow-x: clip; }
+@media (max-width: 575.98px) { .a-pager .pagination { gap: .2rem; } .a-pager .page-link { min-width: 32px; height: 32px; padding: 0 .4rem; font-size: .8rem; } }

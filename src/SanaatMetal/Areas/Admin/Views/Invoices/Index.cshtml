@@ -53,6 +53,6 @@
     </div>
     @if (pages > 1)
     {
-        <nav class="p-3"><ul class="pagination justify-content-center mb-0">@for (var p = 1; p <= pages; p++) { <li class="page-item @(p == page ? "active" : "")"><a class="page-link" asp-route-page="@p" asp-route-q="@ViewBag.Q" asp-route-status="@st" asp-route-type="@tp" asp-route-from="@ViewBag.From" asp-route-to="@ViewBag.To">@N(p)</a></li> }</ul></nav>
+        <div class="p-3"><partial name="_Pager" model="(page, pages)" /></div>
     }
 </div>
