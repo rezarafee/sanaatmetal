@@ -12,5 +12,5 @@
             <tbody>@foreach (var a in Model) { <tr><td class="small text-nowrap">@D(a.At, true)</td><td>@a.UserName</td><td class="fw-bold">@a.Action</td><td class="small">@a.Details</td><td class="small ltr text-muted">@a.IpAddress</td></tr> }</tbody>
         </table>
     </div>
-    @if (pages > 1) { <nav class="p-3"><ul class="pagination justify-content-center mb-0 flex-wrap">@for (var i = 1; i <= Math.Min(pages, 30); i++) { <li class="page-item @(i == page ? "active" : "")"><a class="page-link" asp-route-page="@i" asp-route-q="@ViewBag.Q">@N(i)</a></li> }</ul></nav> }
+    @if (pages > 1) { <div class="p-3"><partial name="_Pager" model="(page, pages)" /></div> }
 </div>

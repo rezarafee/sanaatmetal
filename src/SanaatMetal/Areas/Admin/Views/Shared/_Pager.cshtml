@@ -1,0 +1,48 @@
+@using Microsoft.AspNetCore.WebUtilities
+@model (int Page, int Pages)
+@*
+    صفحه‌بندی مشترک پنل: فقط صفحه اول، آخر و چند صفحه اطراف صفحه فعلی نمایش داده می‌شود
+    (قبلاً همه صفحه‌ها چاپ می‌شد و با هزاران رکورد، ردیف شماره‌ها از عرض صفحه بیرون می‌زد و چیدمان پنل به هم می‌ریخت).
+    بقیه پارامترهای آدرس (جستجو، فیلتر و ...) حفظ می‌شوند.
+*@
+@if (Model.Pages > 1)
+{
+    var pages = Model.Pages;
+    var cur = Math.Clamp(Model.Page, 1, pages);
+    var query = QueryHelpers.ParseQuery(Context.Request.QueryString.Value);
+    string Url(int p)
+    {
+        var d = query.Where(k => k.Key != "page").ToDictionary(k => k.Key, k => (string?)k.Value.ToString());
+        d["page"] = p.ToString();
+        return QueryHelpers.AddQueryString(Context.Request.PathBase + Context.Request.Path, d);
+    }
+    var show = new SortedSet<int> { 1, pages };
+    for (var i = cur - 2; i <= cur + 2; i++) if (i >= 1 && i <= pages) show.Add(i);
+    <nav class="a-pager" aria-label="صفحه‌بندی">
+        <ul class="pagination mb-0">
+            <li class="page-item @(cur == 1 ? "disabled" : "")"><a class="page-link" href="@Url(cur - 1)" aria-label="صفحه قبل"><i class="bi bi-chevron-right"></i></a></li>
+            @{ var prev = 0; }
+            @foreach (var i in show)
+            {
+                if (prev != 0 && i - prev > 1) { <li class="page-item disabled"><span class="page-link">…</span></li> }
+                var far = Math.Abs(i - cur) == 2 && i != 1 && i != pages;
+                <li class="page-item @(i == cur ? "active" : "") @(far ? "d-none d-sm-block" : "")"><a class="page-link" href="@Url(i)">@N(i)</a></li>
+                prev = i;
+            }
+            <li class="page-item @(cur == pages ? "disabled" : "")"><a class="page-link" href="@Url(cur + 1)" aria-label="صفحه بعد"><i class="bi bi-chevron-left"></i></a></li>
+        </ul>
+        @if (pages > 7)
+        {
+            <form method="get" class="a-pager-jump">
+                @foreach (var k in query.Where(k => k.Key != "page"))
+                {
+                    <input type="hidden" name="@k.Key" value="@k.Value" />
+                }
+                <label for="pgJump">صفحه</label>
+                <input id="pgJump" class="form-control form-control-sm" type="number" name="page" min="1" max="@pages" value="@cur" inputmode="numeric" />
+                <span>از @N(pages)</span>
+                <button class="btn btn-soft btn-sm">برو</button>
+            </form>
+        }
+    </nav>
+}

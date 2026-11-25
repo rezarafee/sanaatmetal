@@ -26,13 +26,14 @@ public class PasswordResetService(UserManager<AppUser> users, EmailService email
         var intro = newAccount
             ? "برای شما یک حساب کاربری در پنل مدیریت ساخته شد. برای تعیین رمز عبور روی دکمه زیر بزنید."
             : "درخواست بازیابی رمز عبور حساب شما در پنل مدیریت ثبت شد. برای تعیین رمز جدید روی دکمه زیر بزنید.";
+        var brand = ThemeCss.Hex(s.ThemePrimary) ?? "#22318a";
         var html = $"""
             <div dir="rtl" style="font-family:Tahoma,Arial;line-height:2;color:#1f2937;max-width:560px">
-              <h3 style="color:#22318a">{e(s.CompanyNameFa)} - {title}</h3>
+              <h3 style="color:{brand}">{e(s.CompanyNameFa)} - {title}</h3>
               <p>{e(user.FullName)} عزیز،</p>
               <p>{intro}</p>
               <p><b>نام کاربری:</b> <span dir="ltr">{e(user.UserName)}</span></p>
-              <p style="margin:24px 0"><a href="{e(link)}" style="background:#22318a;color:#fff;padding:10px 22px;border-radius:8px;text-decoration:none">تعیین رمز عبور</a></p>
+              <p style="margin:24px 0"><a href="{e(link)}" style="background:{brand};color:#fff;padding:10px 22px;border-radius:8px;text-decoration:none">تعیین رمز عبور</a></p>
               <p style="font-size:12px;color:#6b7280">این لینک تا ۲ ساعت معتبر است و فقط یک بار کار می‌کند.
               اگر این درخواست از طرف شما نبوده، این ایمیل را نادیده بگیرید؛ رمز فعلی شما تغییر نمی‌کند.</p>
               <p style="font-size:12px;color:#6b7280;direction:ltr;text-align:left;word-break:break-all">{e(link)}</p>

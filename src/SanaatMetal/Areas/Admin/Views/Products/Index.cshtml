@@ -3,14 +3,17 @@
     ViewData["Title"] = "محصولات";
     var cats = (List<Category>)ViewBag.Categories;
     int page = ViewBag.Page, pages = ViewBag.Pages;
+    var canManage = Can(Permissions.CatalogManage);
+    var total = (int)ViewBag.Total;
 }
 <div class="a-card">
     <div class="a-card-head">
         <h5><i class="bi bi-box-seam ic text-primary"></i>محصولات <span class="text-muted small">(@N((int)ViewBag.Total))</span></h5>
-        @if (Can(Permissions.CatalogManage))
+        @if (canManage)
         {
             <div class="d-flex flex-wrap gap-2">
                 <a class="btn btn-soft btn-sm" asp-controller="ProductImport" asp-action="Index"><i class="bi bi-file-earmark-spreadsheet ic"></i>ورود از اکسل</a>
+                <a class="btn btn-soft btn-sm" asp-controller="ProductImageImport" asp-action="Index"><i class="bi bi-images ic"></i>عکس‌ها با ZIP</a>
                 <a class="btn btn-a btn-sm" asp-action="Create"><i class="bi bi-plus-lg ic"></i>محصول جدید</a>
             </div>
         }
@@ -33,14 +36,46 @@
         </div>
         <div class="col-md-2"><button class="btn btn-soft w-100"><i class="bi bi-search ic"></i>جستجو</button></div>
     </form>
+    @if (canManage && Model.Count > 0)
+    {
+        <form method="post" asp-action="Bulk" id="bulkForm" class="bulk-bar" data-bulk data-total="@total">
+            <input type="hidden" name="q" value="@ViewBag.Q" />
+            <input type="hidden" name="cat" value="@ViewBag.Cat" />
+            <input type="hidden" name="status" value="@ViewBag.Status" />
+            <input type="hidden" name="all" value="false" data-bulk-all />
+            <input type="hidden" name="expected" value="@total" />
+            <input type="hidden" name="op" value="" data-bulk-op-input />
+            <div class="bulk-info">
+                <span data-bulk-count>هیچ محصولی انتخاب نشده</span>
+                @if (total > Model.Count)
+                {
+                    <button type="button" class="btn btn-link btn-sm p-0 d-none" data-bulk-select-all>انتخاب همه @N(total) نتیجه فیلتر</button>
+                    <button type="button" class="btn btn-link btn-sm p-0 d-none" data-bulk-clear>لغو انتخاب همه</button>
+                }
+            </div>
+            <div class="bulk-actions">
+                <button type="button" class="btn btn-soft btn-sm" data-bulk-op="activate" disabled><i class="bi bi-eye ic"></i>فعال</button>
+                <button type="button" class="btn btn-soft btn-sm" data-bulk-op="deactivate" disabled><i class="bi bi-eye-slash ic"></i>غیرفعال</button>
+                <div class="input-group input-group-sm bulk-move">
+                    <select class="form-select" name="targetCategoryId" aria-label="دسته مقصد">
+                        <option value="">انتقال به دسته...</option>
+                        @foreach (var c in cats) { <option value="@c.Id">@(c.ParentId != null ? "— " : "")@c.NameFa</option> }
+                    </select>
+                    <button type="button" class="btn btn-soft-primary" data-bulk-op="move" disabled data-bulk-needs-target title="انتقال به دسته انتخاب‌شده"><i class="bi bi-folder-symlink"></i></button>
+                </div>
+                <button type="button" class="btn btn-soft-danger btn-sm" data-bulk-op="delete" disabled><i class="bi bi-trash3 ic"></i>حذف</button>
+            </div>
+        </form>
+    }
     <div class="table-responsive">
         <table class="table a-table table-hover">
-            <thead><tr><th></th><th>نام محصول</th><th>کد</th><th>دسته</th><th>متریال</th><th>سایزها</th><th>مستندات</th><th>وضعیت</th><th></th></tr></thead>
+            <thead><tr>@if (canManage) { <th class="bulk-check"><input class="form-check-input" type="checkbox" data-bulk-page aria-label="انتخاب همه این صفحه" /></th> }<th></th><th>نام محصول</th><th>کد</th><th>دسته</th><th>متریال</th><th>سایزها</th><th>مستندات</th><th>وضعیت</th><th></th></tr></thead>
             <tbody>
                 @foreach (var r in Model)
                 {
                     var p = r.Product;
                     <tr>
+                        @if (canManage) { <td class="bulk-check"><input class="form-check-input" type="checkbox" name="ids" value="@p.Id" form="bulkForm" data-bulk-row aria-label="انتخاب @p.NameFa" /></td> }
                         <td><img class="a-thumb" src="@(r.Image ?? "/img/placeholder.svg")" alt="" /></td>
                         <td><div class="fw-bold">@p.NameFa</div><div class="small text-muted ltr text-end">@p.NameEn</div></td>
                         <td class="ltr">@p.Code</td>
@@ -56,7 +91,7 @@
                         <td>
                             <div class="a-actions">
                                 <a class="btn btn-soft" href="/products/@p.Slug" target="_blank" title="مشاهده در سایت"><i class="bi bi-eye"></i></a>
-                                @if (Can(Permissions.CatalogManage))
+                                @if (canManage)
                                 {
                                     <a class="btn btn-soft-primary" asp-action="Edit" asp-route-id="@p.Id" title="ویرایش"><i class="bi bi-pencil"></i></a>
                                     <form method="post" asp-action="Delete" asp-route-id="@p.Id" data-confirm="محصول «@p.NameFa» با همه سایزها، عکس‌ها و مستنداتش حذف شود؟"><button class="btn btn-soft-danger" title="حذف"><i class="bi bi-trash3"></i></button></form>
@@ -71,11 +106,6 @@
     </div>
     @if (pages > 1)
     {
-        <nav class="p-3"><ul class="pagination justify-content-center mb-0">
-            @for (var i = 1; i <= pages; i++)
-            {
-                <li class="page-item @(i == page ? "active" : "")"><a class="page-link" asp-route-page="@i" asp-route-q="@ViewBag.Q" asp-route-cat="@ViewBag.Cat" asp-route-status="@ViewBag.Status">@N(i)</a></li>
-            }
-        </ul></nav>
+        <div class="p-3"><partial name="_Pager" model="(page, pages)" /></div>
     }
 </div>

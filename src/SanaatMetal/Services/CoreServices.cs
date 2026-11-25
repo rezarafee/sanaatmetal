@@ -22,6 +22,14 @@ public class SettingsService(AppDbContext db, IMemoryCache cache, IDataProtectio
             return await db.SiteSettings.AsNoTracking().FirstOrDefaultAsync() ?? new SiteSettings();
         }))!;
 
+    /// <summary>نسخه همزمان؛ برای جاهایی مثل متن‌های سایت (Lang) که async نیستند</summary>
+    public SiteSettings Get() =>
+        cache.GetOrCreate(Key, e =>
+        {
+            e.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
+            return db.SiteSettings.AsNoTracking().FirstOrDefault() ?? new SiteSettings();
+        })!;
+
     public void Invalidate() => cache.Remove(Key);
 
     public string Protect(string plain) => _protector.Protect(plain);
@@ -68,8 +76,11 @@ public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageServ
 
     public string AllowedFor(UploadKind kind) => string.Join(",", kind == UploadKind.Image ? ImageExt : DocExt);
 
-    /// <summary>ذخیره امن فایل: بررسی پسوند، حجم و امضای فایل، نام تصادفی</summary>
-    public async Task<(string? Path, string? Error)> SaveAsync(IFormFile? file, string folder, UploadKind kind)
+    /// <summary>
+    /// ذخیره امن فایل: بررسی پسوند، حجم و امضای فایل، نام تصادفی.
+    /// برای عکس‌ها اگر <paramref name="profile"/> داده شود عکس در سرور به اندازه استاندارد کوچک/برش داده و فشرده می‌شود.
+    /// </summary>
+    public async Task<(string? Path, string? Error)> SaveAsync(IFormFile? file, string folder, UploadKind kind, ImageProfile? profile = null)
     {
         if (file is null || file.Length == 0) return (null, "فایلی انتخاب نشده است.");
         var ext = System.IO.Path.GetExtension(file.FileName).ToLowerInvariant();
@@ -78,14 +89,60 @@ public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageServ
         var max = kind == UploadKind.Image ? MaxImageBytes : MaxDocBytes;
         if (file.Length > max) return (null, $"حجم فایل بیشتر از {max / 1024 / 1024} مگابایت است.");
 
+        byte[] bytes;
         await using (var s = file.OpenReadStream())
+        using (var ms = new MemoryStream())
         {
-            var header = new byte[8];
-            var read = await s.ReadAsync(header);
-            if (!Signatures[ext].Any(sig => read >= sig.Length && header.Take(sig.Length).SequenceEqual(sig)))
-                return (null, "محتوای فایل با پسوند آن مطابقت ندارد.");
+            await s.CopyToAsync(ms);
+            bytes = ms.ToArray();
         }
+        return await SaveValidatedAsync(bytes, ext, folder, kind, profile);
+    }
 
+    /// <summary>
+    /// ذخیره عکسی که از جایی غیر از فرم آمده (مثلاً از داخل فایل ZIP). نام فایل فقط برای پسوند استفاده می‌شود.
+    /// همان بررسی پسوند، امضای فایل و پردازش عکس <see cref="SaveAsync"/> انجام می‌شود.
+    /// </summary>
+    public Task<(string? Path, string? Error)> SaveImageBytesAsync(byte[] bytes, string fileName, string folder, ImageProfile? profile)
+    {
+        var ext = System.IO.Path.GetExtension(fileName).ToLowerInvariant();
+        if (!ImageExt.Contains(ext)) return Task.FromResult<(string?, string?)>((null, $"نوع فایل مجاز نیست. پسوندهای مجاز: {string.Join("، ", ImageExt)}"));
+        if (bytes.Length == 0) return Task.FromResult<(string?, string?)>((null, "فایل خالی است."));
+        return SaveValidatedAsync(bytes, ext, folder, UploadKind.Image, profile);
+    }
+
+    /// <summary>آیا ابتدای فایل با امضای پسوندش (jpg/png/webp/...) می‌خواند؟</summary>
+    public static bool HasValidSignature(byte[] bytes, string fileName) =>
+        Signatures.TryGetValue(System.IO.Path.GetExtension(fileName).ToLowerInvariant(), out var sigs) &&
+        sigs.Any(sig => bytes.Length >= sig.Length && bytes.AsSpan(0, sig.Length).SequenceEqual(sig));
+
+    public static bool IsImageExtension(string fileName) => ImageExt.Contains(System.IO.Path.GetExtension(fileName).ToLowerInvariant());
+
+    private async Task<(string? Path, string? Error)> SaveValidatedAsync(byte[] bytes, string ext, string folder, UploadKind kind, ImageProfile? profile)
+    {
+        if (!Signatures[ext].Any(sig => bytes.Length >= sig.Length && bytes.AsSpan(0, sig.Length).SequenceEqual(sig)))
+            return (null, "محتوای فایل با پسوند آن مطابقت ندارد.");
+
+        if (kind == UploadKind.Image && profile is not null)
+        {
+            try
+            {
+                var (processed, err) = ImageService.Process(bytes, profile);
+                if (err is not null) return (null, err);
+                bytes = processed!;
+                ext = profile.Extension;
+            }
+            catch (Exception ex)
+            {
+                // اگر کتابخانه عکس روی هاست در دسترس نبود، فایل اصلی (که قبلاً بررسی شده) ذخیره می‌شود
+                log.LogWarning(ex, "Image processing failed; saving the original file");
+            }
+        }
+        return await SaveBytesAsync(bytes, folder, ext);
+    }
+
+    private async Task<(string? Path, string? Error)> SaveBytesAsync(byte[] bytes, string folder, string ext)
+    {
         var safeFolder = string.Concat(folder.Where(char.IsLetterOrDigit));
         var rel = $"uploads/{safeFolder}/{DateTime.UtcNow:yyyy}/{DateTime.UtcNow:MM}";
         var name = $"{Guid.NewGuid():N}{ext}";
@@ -97,7 +154,7 @@ public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageServ
             {
                 Directory.CreateDirectory(dir);
                 await using (var fs = new FileStream(System.IO.Path.Combine(dir, name), FileMode.CreateNew))
-                    await file.CopyToAsync(fs);
+                    await fs.WriteAsync(bytes);
                 return (webPath, null);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -110,12 +167,10 @@ public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageServ
 
         try
         {
-            using var ms = new MemoryStream();
-            await file.CopyToAsync(ms);
             // context جدا تا تغییرات ذخیره‌نشده صفحه فعلی همراه فایل ذخیره نشوند
             using var scope = scopes.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.StoredFiles.Add(new StoredFile { Path = webPath, ContentType = ContentTypes.GetValueOrDefault(ext, "application/octet-stream"), Data = ms.ToArray(), Size = ms.Length });
+            db.StoredFiles.Add(new StoredFile { Path = webPath, ContentType = ContentTypes.GetValueOrDefault(ext, "application/octet-stream"), Data = bytes, Size = bytes.Length });
             await db.SaveChangesAsync();
             return (webPath, null);
         }
@@ -124,6 +179,19 @@ public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageServ
             log.LogError(ex, "Saving upload to the database failed: {Path}", webPath);
             return (null, "ذخیره فایل ممکن نشد. دوباره تلاش کنید؛ اگر تکرار شد کد خطا را از صفحه /diag بفرستید.");
         }
+    }
+
+    /// <summary>خواندن فایل آپلودشده (از دیسک یا جدول StoredFiles)</summary>
+    public async Task<byte[]?> ReadAsync(string? webPath)
+    {
+        if (string.IsNullOrEmpty(webPath) || !webPath.StartsWith("/uploads/")) return null;
+        var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(env.WebRootPath, webPath.TrimStart('/')));
+        var root = System.IO.Path.GetFullPath(System.IO.Path.Combine(env.WebRootPath, "uploads"));
+        try { if (full.StartsWith(root) && File.Exists(full)) return await File.ReadAllBytesAsync(full); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { log.LogWarning(ex, "Reading upload failed: {Path}", full); }
+        using var scope = scopes.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<AppDbContext>().StoredFiles.AsNoTracking()
+            .Where(f => f.Path == webPath).Select(f => f.Data).FirstOrDefaultAsync();
     }
 
     public void Delete(string? webPath)
@@ -140,6 +208,28 @@ public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageServ
             scope.ServiceProvider.GetRequiredService<AppDbContext>().StoredFiles.Where(f => f.Path == webPath).ExecuteDelete();
         }
         catch (Exception ex) { log.LogWarning(ex, "Deleting stored upload failed: {Path}", webPath); }
+    }
+
+    /// <summary>حذف تعداد زیادی فایل (مثلاً بعد از حذف گروهی محصولات) با چند کوئری دسته‌ای به‌جای یک کوئری برای هر فایل</summary>
+    public async Task DeleteManyAsync(IReadOnlyCollection<string> webPaths)
+    {
+        var list = webPaths.Where(p => !string.IsNullOrEmpty(p) && p.StartsWith("/uploads/")).Distinct().ToList();
+        if (list.Count == 0) return;
+        var root = System.IO.Path.GetFullPath(System.IO.Path.Combine(env.WebRootPath, "uploads"));
+        foreach (var webPath in list)
+        {
+            var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(env.WebRootPath, webPath.TrimStart('/')));
+            try { if (full.StartsWith(root) && File.Exists(full)) File.Delete(full); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { log.LogWarning(ex, "Deleting upload failed: {Path}", full); }
+        }
+        try
+        {
+            using var scope = scopes.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            foreach (var part in list.Chunk(500))
+                await db.StoredFiles.Where(f => part.Contains(f.Path)).ExecuteDeleteAsync();
+        }
+        catch (Exception ex) { log.LogWarning(ex, "Deleting stored uploads failed ({Count} files)", list.Count); }
     }
 }
 

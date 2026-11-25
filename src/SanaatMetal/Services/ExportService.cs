@@ -19,11 +19,33 @@ public class ReportTable
 }
 
 /// <summary>خروجی Excel (ClosedXML) و PDF (QuestPDF) با پشتیبانی کامل راست‌به‌چپ</summary>
-public class ExportService
+public class ExportService(SettingsService settings, FileStorageService files)
 {
     public const string FontFamily = "Vazirmatn";
     private static bool _fontsLoaded;
-    private static byte[]? _logo;
+    private static byte[]? _defaultLogo;
+    private static (string Path, byte[]? Png)? _customLogo;
+
+    /// <summary>لوگوی PDF: لوگوی آپلودشده در «ظاهر سایت» (تبدیل به PNG) یا لوگوی پیش‌فرض</summary>
+    private byte[]? Logo
+    {
+        get
+        {
+            var path = settings.Get().LogoPath;
+            if (string.IsNullOrEmpty(path)) return _defaultLogo;
+            var cached = _customLogo;
+            if (cached is { } c && c.Path == path) return c.Png ?? _defaultLogo;
+            byte[]? png = null;
+            try
+            {
+                var raw = files.ReadAsync(path).GetAwaiter().GetResult();
+                if (raw is not null) png = ImageService.ToPng(raw);
+            }
+            catch (Exception) { png = null; }
+            _customLogo = (path, png);
+            return png ?? _defaultLogo;
+        }
+    }
     private static readonly Lock FontLock = new();
 
     public static void EnsureFonts(string contentRoot)
@@ -40,7 +62,7 @@ public class ExportService
                 QuestPDF.Drawing.FontManager.RegisterFontFromStream(s);
             }
             var logo = Path.Combine(contentRoot, "wwwroot", "img", "brand", "logo-mark-256.png");
-            if (File.Exists(logo)) _logo = File.ReadAllBytes(logo);
+            if (File.Exists(logo)) _defaultLogo = File.ReadAllBytes(logo);
             _fontsLoaded = true;
         }
     }
@@ -130,7 +152,7 @@ public class ExportService
 
             page.Header().PaddingBottom(8).Row(r =>
             {
-                if (_logo != null) r.ConstantItem(40).PaddingLeft(8).Image(_logo);
+                if (Logo is { } logo40) r.ConstantItem(40).PaddingLeft(8).Image(logo40);
                 r.RelativeItem().Column(c =>
                 {
                     c.Item().Text(t.Title).FontSize(14).Bold().FontColor("#0f3d5e");
@@ -211,7 +233,7 @@ public class ExportService
             {
                 col.Item().Row(r =>
                 {
-                    if (_logo != null) r.ConstantItem(54).PaddingLeft(8).Image(_logo);
+                    if (Logo is { } logo54) r.ConstantItem(54).PaddingLeft(8).Image(logo54);
                     r.RelativeItem().Column(c =>
                     {
                         c.Item().Text(s.CompanyNameFa).FontSize(16).Bold().FontColor("#0f3d5e");

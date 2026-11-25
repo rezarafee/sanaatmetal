@@ -1,4 +1,8 @@
-@{ Layout = null; }
+@inject SanaatMetal.Services.SettingsService SiteSettingsSvc
+@{
+    Layout = null;
+    var site = await SiteSettingsSvc.GetAsync();
+}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-bs-theme="dark">
 <head>
@@ -17,9 +21,9 @@
     <div class="a-login">
         <div class="a-login-card">
             <div class="text-center mb-4">
-                <div class="a-brand-logo a-brand-logo-lg mx-auto mb-3"><img src="~/img/brand/logo-mark.svg" alt="صنعت متال" width="84" height="84" /></div>
-                <h1 class="h3 mb-1" style="font-family:Titr,Lalezar,Vazirmatn">صنعت متال</h1>
-                <div class="a-wm mb-2" style="font-size:1rem"><b>S</b>anaat<b>M</b>etal</div>
+                <div class="a-brand-logo a-brand-logo-lg mx-auto mb-3"><img src="@(string.IsNullOrEmpty(site.LogoPath) ? "/img/brand/logo-mark.svg" : site.LogoPath)" alt="@site.CompanyNameFa" width="84" height="84" /></div>
+                <h1 class="h3 mb-1" style="font-family:Titr,Lalezar,Vazirmatn">@site.CompanyNameFa</h1>
+                @if (!string.IsNullOrWhiteSpace(site.CompanyNameEn)) { <div class="mb-2 fw-bold ltr" style="font-size:1rem">@site.CompanyNameEn</div> }
                 <p class="text-white-50 small mb-0">@ViewData["Title"]</p>
             </div>
             @RenderBody()

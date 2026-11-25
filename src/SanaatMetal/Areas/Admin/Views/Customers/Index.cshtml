@@ -20,5 +20,5 @@
         </table>
         @if (Model.Count == 0) { <div class="a-empty"><i class="bi bi-people"></i>خریداری ثبت نشده است.</div> }
     </div>
-    @if (pages > 1) { <nav class="p-3"><ul class="pagination justify-content-center mb-0">@for (var i = 1; i <= pages; i++) { <li class="page-item @(i == page ? "active" : "")"><a class="page-link" asp-route-page="@i" asp-route-q="@ViewBag.Q">@N(i)</a></li> }</ul></nav> }
+    @if (pages > 1) { <div class="p-3"><partial name="_Pager" model="(page, pages)" /></div> }
 </div>

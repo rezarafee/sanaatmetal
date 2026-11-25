@@ -1,0 +1,51 @@
+@model SiteSettings
+@using SanaatMetal.Services
+@{
+    ViewData["Title"] = "متن‌های سایت";
+    var current = Model.Texts();
+    var custom = current.Count;
+}
+<div class="a-card mb-4">
+    <div class="a-card-body d-flex flex-wrap gap-3 align-items-center">
+        <div class="flex-grow-1 min-w-0">
+            <div class="fw-bold mb-1"><i class="bi bi-fonts ic text-primary"></i>همه متن‌های ثابت سایت را اینجا عوض کنید</div>
+            <div class="small text-muted">متن خاکستری داخل هر کادر، متن پیش‌فرض است. کادری که خالی بماند همان پیش‌فرض نمایش داده می‌شود. اگر انگلیسی خالی باشد، نسخه انگلیسی پیش‌فرض نمایش داده می‌شود.
+                @if (custom > 0) { <span class="pill pill-info ms-1">@N(custom) متن سفارشی</span> }</div>
+        </div>
+        <input type="search" class="form-control" style="max-width:280px" placeholder="جستجوی متن..." data-text-filter="#textsForm" aria-label="جستجو" />
+    </div>
+</div>
+<form method="post" id="textsForm">
+    @foreach (var (group, keys) in Lang.EditableGroups)
+    {
+        <div class="a-card mb-4" data-text-group>
+            <div class="a-card-head"><h5><i class="bi bi-chat-square-text ic text-primary"></i>@group</h5></div>
+            <div class="a-card-body">
+                @foreach (var key in keys)
+                {
+                    var d = Lang.Defaults.GetValueOrDefault(key);
+                    current.TryGetValue(key, out var v);
+                    var multi = (d.Fa?.Length ?? 0) > 60;
+                    <div class="row g-2 align-items-start a-text-row" data-text-row="@($"{key} {d.Fa} {d.En} {v.Fa} {v.En}".ToLowerInvariant())">
+                        <div class="col-12 col-md-2 small"><code class="ltr">@key</code>@if (v.Fa != null || v.En != null) { <i class="bi bi-pencil-fill text-warning ms-1" title="سفارشی"></i> }</div>
+                        <div class="col-12 col-md-5">
+                            @if (multi) { <textarea class="form-control form-control-sm" name="fa[@key]" rows="2" placeholder="@d.Fa" maxlength="600">@v.Fa</textarea> }
+                            else { <input class="form-control form-control-sm" name="fa[@key]" value="@v.Fa" placeholder="@(string.IsNullOrEmpty(d.Fa) ? "(خالی)" : d.Fa)" maxlength="600" /> }
+                        </div>
+                        <div class="col-12 col-md-5">
+                            @if (multi) { <textarea class="form-control form-control-sm ltr" name="en[@key]" rows="2" placeholder="@d.En" maxlength="600">@v.En</textarea> }
+                            else { <input class="form-control form-control-sm ltr" name="en[@key]" value="@v.En" placeholder="@(string.IsNullOrEmpty(d.En) ? "(empty)" : d.En)" maxlength="600" /> }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    <div class="a-card a-card-body mb-4 small text-muted">
+        <i class="bi bi-lightbulb ic text-warning"></i><b>نکته:</b> HeroQ1 تا HeroQ3 کلمات «پرجستجو» زیر جستجوی بنر هستند؛ اگر خالی بمانند نام سه دسته‌بندی اول نشان داده می‌شود.
+        Size / Class / Schedule عنوان ستون‌های جدول مدل‌ها در صفحه محصول است (مثلاً برای دوربین: «مدل»، «رزولوشن»، «لنز»).
+    </div>
+    <div class="position-sticky bottom-0 py-3 no-print" style="z-index:5">
+        <button class="btn btn-a btn-lg px-5 shadow"><i class="bi bi-check2-circle ic"></i>ذخیره متن‌ها</button>
+    </div>
+</form>

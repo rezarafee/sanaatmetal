@@ -52,17 +52,17 @@
                             {
                                 var it = Model.Items[i];
                                 <tr class="inv-row" data-locked="@(it.VariantId.HasValue && !canPrice ? "1" : "0")">
-                                    <td class="text-center text-muted" data-idx>@(i + 1)</td>
-                                    <td>
+                                    <td class="text-center text-muted" data-label="ردیف" data-idx>@(i + 1)</td>
+                                    <td class="inv-desc-cell">
                                         <input type="hidden" name="Items[@i].VariantId" value="@it.VariantId" data-f="VariantId" />
                                         <input class="form-control" name="Items[@i].Description" value="@it.Description" data-f="Description" autocomplete="off" placeholder="نام یا کد کالا را تایپ کنید..." />
                                     </td>
-                                    <td><input class="form-control" name="Items[@i].Quantity" value="@it.Quantity.ToString("0.##")" data-f="Quantity" inputmode="decimal" /></td>
-                                    <td><input class="form-control" name="Items[@i].Unit" value="@it.Unit" data-f="Unit" /></td>
-                                    <td><input class="form-control num" name="Items[@i].UnitPrice" value="@it.UnitPrice.ToString("0")" data-f="UnitPrice" data-money /></td>
-                                    <td><input class="form-control" name="Items[@i].DiscountPercent" value="@it.DiscountPercent.ToString("0.##")" data-f="DiscountPercent" inputmode="decimal" /></td>
-                                    <td class="num fw-bold" data-line>0</td>
-                                    <td><button type="button" class="btn btn-soft-danger btn-sm" data-inv-remove title="حذف ردیف"><i class="bi bi-x-lg"></i></button></td>
+                                    <td data-label="تعداد"><input class="form-control" name="Items[@i].Quantity" value="@it.Quantity.ToString("0.##")" data-f="Quantity" inputmode="decimal" /></td>
+                                    <td data-label="واحد"><input class="form-control" name="Items[@i].Unit" value="@it.Unit" data-f="Unit" /></td>
+                                    <td data-label="فی (ریال)"><input class="form-control num" name="Items[@i].UnitPrice" value="@it.UnitPrice.ToString("0")" data-f="UnitPrice" data-money /></td>
+                                    <td data-label="تخفیف ٪"><input class="form-control" name="Items[@i].DiscountPercent" value="@it.DiscountPercent.ToString("0.##")" data-f="DiscountPercent" inputmode="decimal" /></td>
+                                    <td class="num fw-bold" data-line data-label="مبلغ">0</td>
+                                    <td class="row-remove"><button type="button" class="btn btn-soft-danger btn-sm" data-inv-remove title="حذف ردیف"><i class="bi bi-x-lg"></i></button></td>
                                 </tr>
                             }
                         </tbody>
@@ -95,12 +95,12 @@
                                     {
                                         var c = Model.Cheques[i];
                                         <tr class="cheque-row" data-manual="1">
-                                            <td class="text-muted" data-idx>@(i + 1)</td>
-                                            <td><input class="form-control num" data-c="Amount" value="@c.Amount.ToString("0")" data-money /></td>
-                                            <td><input class="form-control ltr" data-c="DueDate" value="@c.DueDate" data-jdp autocomplete="off" placeholder="انتخاب تاریخ" /></td>
-                                            <td><input class="form-control ltr" data-c="Number" value="@c.Number" /></td>
-                                            <td><input class="form-control" data-c="Bank" value="@c.Bank" /></td>
-                                            <td><button type="button" class="btn btn-soft-danger btn-sm" data-cheque-remove title="حذف چک"><i class="bi bi-x-lg"></i></button></td>
+                                            <td class="text-muted" data-label="چک" data-idx>@(i + 1)</td>
+                                            <td data-label="مبلغ (ریال)"><input class="form-control num" data-c="Amount" value="@c.Amount.ToString("0")" data-money /></td>
+                                            <td data-label="سررسید"><input class="form-control ltr" data-c="DueDate" value="@c.DueDate" data-jdp autocomplete="off" placeholder="انتخاب تاریخ" /></td>
+                                            <td data-label="شماره چک / صیادی"><input class="form-control ltr" data-c="Number" value="@c.Number" /></td>
+                                            <td data-label="بانک"><input class="form-control" data-c="Bank" value="@c.Bank" /></td>
+                                            <td class="row-remove"><button type="button" class="btn btn-soft-danger btn-sm" data-cheque-remove title="حذف چک"><i class="bi bi-x-lg"></i></button></td>
                                         </tr>
                                     }
                                 </tbody>
@@ -138,28 +138,28 @@
 
 <template id="invRowTpl">
     <tr class="inv-row" data-locked="0">
-        <td class="text-center text-muted" data-idx></td>
-        <td>
+        <td class="text-center text-muted" data-label="ردیف" data-idx></td>
+        <td class="inv-desc-cell">
             <input type="hidden" data-f="VariantId" />
             <input class="form-control" data-f="Description" autocomplete="off" placeholder="نام یا کد کالا را تایپ کنید..." />
         </td>
-        <td><input class="form-control" data-f="Quantity" value="1" inputmode="decimal" /></td>
-        <td><input class="form-control" data-f="Unit" /></td>
-        <td><input class="form-control num" data-f="UnitPrice" value="0" data-money /></td>
-        <td><input class="form-control" data-f="DiscountPercent" value="0" inputmode="decimal" /></td>
-        <td class="num fw-bold" data-line>0</td>
-        <td><button type="button" class="btn btn-soft-danger btn-sm" data-inv-remove title="حذف ردیف"><i class="bi bi-x-lg"></i></button></td>
+        <td data-label="تعداد"><input class="form-control" data-f="Quantity" value="1" inputmode="decimal" /></td>
+        <td data-label="واحد"><input class="form-control" data-f="Unit" /></td>
+        <td data-label="فی (ریال)"><input class="form-control num" data-f="UnitPrice" value="0" data-money /></td>
+        <td data-label="تخفیف ٪"><input class="form-control" data-f="DiscountPercent" value="0" inputmode="decimal" /></td>
+        <td class="num fw-bold" data-line data-label="مبلغ">0</td>
+        <td class="row-remove"><button type="button" class="btn btn-soft-danger btn-sm" data-inv-remove title="حذف ردیف"><i class="bi bi-x-lg"></i></button></td>
     </tr>
 </template>
 
 <template id="chequeRowTpl">
     <tr class="cheque-row">
-        <td class="text-muted" data-idx></td>
-        <td><input class="form-control num" data-c="Amount" value="0" data-money /></td>
-        <td><input class="form-control ltr" data-c="DueDate" data-jdp autocomplete="off" placeholder="انتخاب تاریخ" /></td>
-        <td><input class="form-control ltr" data-c="Number" /></td>
-        <td><input class="form-control" data-c="Bank" /></td>
-        <td><button type="button" class="btn btn-soft-danger btn-sm" data-cheque-remove title="حذف چک"><i class="bi bi-x-lg"></i></button></td>
+        <td class="text-muted" data-label="چک" data-idx></td>
+        <td data-label="مبلغ (ریال)"><input class="form-control num" data-c="Amount" value="0" data-money /></td>
+        <td data-label="سررسید"><input class="form-control ltr" data-c="DueDate" data-jdp autocomplete="off" placeholder="انتخاب تاریخ" /></td>
+        <td data-label="شماره چک / صیادی"><input class="form-control ltr" data-c="Number" /></td>
+        <td data-label="بانک"><input class="form-control" data-c="Bank" /></td>
+        <td class="row-remove"><button type="button" class="btn btn-soft-danger btn-sm" data-cheque-remove title="حذف چک"><i class="bi bi-x-lg"></i></button></td>
     </tr>
 </template>
 

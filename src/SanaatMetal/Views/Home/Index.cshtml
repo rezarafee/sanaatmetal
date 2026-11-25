@@ -7,6 +7,10 @@
     var arrow = L.IsFa ? "bi-arrow-left" : "bi-arrow-right";
     ViewData["Description"] = heroSub is { Length: > 0 } ? heroSub : L.Pick(s.SloganFa, s.SloganEn);
     var baseUrl = Seo.BaseUrl(Context);
+    var heroBg = s.HeroImagePath ?? "/img/hero-bg.svg";
+    // کلمات پرجستجو: اگر در «متن‌های سایت» تعیین نشده باشند، نام دسته‌بندی‌ها نشان داده می‌شود
+    var hints = new[] { L["HeroQ1"], L["HeroQ2"], L["HeroQ3"] }.Where(h => !string.IsNullOrWhiteSpace(h) && !h.StartsWith("HeroQ")).ToList();
+    if (hints.Count == 0) hints = Model.Categories.Take(3).Select(c => L.Pick(c.NameFa, c.NameEn)).ToList();
     var sameAs = new[] { s.Instagram, s.Telegram, s.WhatsApp, s.LinkedIn }.Select(Fmt.SafeUrl).Where(u => u.StartsWith("http")).ToArray();
     var org = new Dictionary<string, object?>
     {
@@ -17,7 +21,7 @@
             {
                 ["@type"] = "Organization", ["@id"] = baseUrl + "/#org",
                 ["name"] = L.Pick(s.CompanyNameFa, s.CompanyNameEn), ["alternateName"] = L.IsFa ? s.CompanyNameEn : s.CompanyNameFa,
-                ["url"] = baseUrl + "/", ["logo"] = baseUrl + "/img/brand/logo-mark-256.png",
+                ["url"] = baseUrl + "/", ["logo"] = baseUrl + (s.LogoPath ?? "/img/brand/logo-mark-256.png"),
                 ["description"] = L.Pick(s.SloganFa, s.SloganEn),
                 ["email"] = string.IsNullOrWhiteSpace(s.Email) ? null : s.Email,
                 ["telephone"] = string.IsNullOrWhiteSpace(s.Phone) ? null : s.Phone,
@@ -47,7 +51,7 @@
     <div class="swiper">
         <div class="swiper-wrapper">
             <div class="swiper-slide">
-                <div class="sm-hero-bg" style="background-image:url('/img/hero-bg.svg')"></div>
+                <div class="sm-hero-bg" style="background-image:url('@heroBg')"></div>
                 <div class="sm-hero-overlay"></div>
                 <div class="sm-hero-pattern bp"></div>
                 <div class="container sm-hero-content">
@@ -56,16 +60,20 @@
                             <span class="sm-hero-chip anim-up"><i class="bi bi-shield-check"></i>@L["Why1"]</span>
                             <h1 class="my-3 anim-up d1">@heroTitle</h1>
                             <p class="mb-4 anim-up d2">@heroSub</p>
-                            <form class="sm-hero-search anim-up d3" action="/products" method="get" role="search">
-                                <input type="search" name="q" placeholder="@L["SearchPlaceholder"]" aria-label="@L["Search"]" />
-                                <button class="btn btn-sm-accent" type="submit"><i class="bi bi-search ic"></i><span>@L["Search"]</span></button>
-                            </form>
-                            <div class="sm-hero-hints mt-2 d-flex flex-wrap gap-3 anim-up d3">
-                                <span>@L["HeroPopular"]</span>
-                                <a href="/products?q=@Uri.EscapeDataString(L["HeroQ1"])">@L["HeroQ1"]</a>
-                                <a href="/products?q=@Uri.EscapeDataString(L["HeroQ2"])">@L["HeroQ2"]</a>
-                                <a href="/products?q=@Uri.EscapeDataString(L["HeroQ3"])">@L["HeroQ3"]</a>
-                            </div>
+                            @if (s.ShowHeroSearch)
+                            {
+                                <form class="sm-hero-search anim-up d3" action="/products" method="get" role="search">
+                                    <input type="search" name="q" placeholder="@L["SearchPlaceholder"]" aria-label="@L["Search"]" />
+                                    <button class="btn btn-sm-accent" type="submit"><i class="bi bi-search ic"></i><span>@L["Search"]</span></button>
+                                </form>
+                                @if (hints.Count > 0)
+                                {
+                                    <div class="sm-hero-hints mt-2 d-flex flex-wrap gap-3 anim-up d3">
+                                        <span>@L["HeroPopular"]</span>
+                                        @foreach (var h in hints) { <a href="/products?q=@Uri.EscapeDataString(h)">@h</a> }
+                                    </div>
+                                }
+                            }
                             <div class="d-flex flex-wrap gap-2 mt-4 anim-up d3">
                                 <a href="/products" class="btn btn-sm-ghost px-4">@L["ViewProducts"] <i class="bi @arrow"></i></a>
                                 <a href="#contact" class="btn btn-sm-ghost px-4"><i class="bi bi-chat-dots ic"></i>@L["RequestQuote"]</a>
@@ -77,7 +85,7 @@
             @foreach (var slide in Model.Slides)
             {
                 <div class="swiper-slide">
-                    <div class="sm-hero-bg" style="background-image:url('/img/hero-bg.svg')"></div>
+                    <div class="sm-hero-bg" style="background-image:url('@heroBg')"></div>
                     <div class="sm-hero-overlay"></div>
                     <div class="sm-hero-pattern"></div>
                     <div class="container sm-hero-content">
@@ -109,19 +117,29 @@
 </section>
 
 <!-- ===== Stats ===== -->
+@if (s.ShowStats)
+{
 <section class="sm-stats">
     <div class="container">
-        <div class="row g-3 row-cols-2 row-cols-lg-4">
+        <div class="row g-3 row-cols-2 row-cols-lg-@(s.YearsOfExperience > 0 ? 4 : 3)">
             <div class="col reveal"><div class="sm-stat"><div class="sm-stat-icon"><i class="bi bi-box-seam"></i></div><div><div class="sm-stat-num" data-count="@Model.ProductCount" data-suffix="+">0</div><small class="text-muted">@L["StatProducts"]</small></div></div></div>
             <div class="col reveal"><div class="sm-stat"><div class="sm-stat-icon"><i class="bi bi-buildings"></i></div><div><div class="sm-stat-num" data-count="@Model.Clients.Count" data-suffix="+">0</div><small class="text-muted">@L["StatClients"]</small></div></div></div>
             <div class="col reveal"><div class="sm-stat"><div class="sm-stat-icon"><i class="bi bi-file-earmark-check"></i></div><div><div class="sm-stat-num" data-count="@Model.DocumentCount">0</div><small class="text-muted">@L["StatCerts"]</small></div></div></div>
-            <div class="col reveal"><div class="sm-stat"><div class="sm-stat-icon"><i class="bi bi-award"></i></div><div><div class="sm-stat-num" data-count="15" data-suffix="+">0</div><small class="text-muted">@L["StatYears"]</small></div></div></div>
+            @if (s.YearsOfExperience > 0)
+            {
+                <div class="col reveal"><div class="sm-stat"><div class="sm-stat-icon"><i class="bi bi-award"></i></div><div><div class="sm-stat-num" data-count="@s.YearsOfExperience" data-suffix="+">0</div><small class="text-muted">@L["StatYears"]</small></div></div></div>
+            }
         </div>
     </div>
 </section>
+}
+else
+{
+    <div class="pt-4"></div>
+}
 
 <!-- ===== Categories ===== -->
-@if (Model.Categories.Count > 0)
+@if (s.ShowCategories && Model.Categories.Count > 0)
 {
     <section class="sm-section">
         <div class="container">
@@ -148,7 +166,7 @@
 }
 
 <!-- ===== Featured products ===== -->
-@if (Model.Featured.Count > 0)
+@if (s.ShowFeatured && Model.Featured.Count > 0)
 {
     <section class="sm-section sm-section-alt sm-featured">
         <div class="container">
@@ -176,6 +194,8 @@
 }
 
 <!-- ===== Why us ===== -->
+@if (s.ShowWhyUs)
+{
 <section class="sm-section">
     <div class="container">
         <div class="sm-section-head reveal">
@@ -197,9 +217,10 @@
         </div>
     </div>
 </section>
+}
 
 <!-- ===== Clients slider ===== -->
-@if (Model.Clients.Count > 0)
+@if (s.ShowClients && Model.Clients.Count > 0)
 {
     <section class="sm-section sm-section-alt sm-clients">
         <div class="container">

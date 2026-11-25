@@ -38,20 +38,11 @@ public class DocumentInput
 }
 
 [HasPermission(Permissions.CatalogView)]
-public class ProductsController(AppDbContext db, FileStorageService files, AuditService audit, PricingService pricing) : AdminControllerBase
+public class ProductsController(AppDbContext db, FileStorageService files, AuditService audit, PricingService pricing, SettingsService settings, ProductBulkService bulk) : AdminControllerBase
 {
     public async Task<IActionResult> Index(string? q, int? cat, string? status, int page = 1)
     {
-        var query = db.Products.AsNoTracking().Include(p => p.Category).Include(p => p.Material).AsQueryable();
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var t = Fmt.EnDigits(q.Trim());
-            query = query.Where(p => p.NameFa.Contains(t) || (p.NameEn != null && p.NameEn.Contains(t)) || p.Code.Contains(t));
-        }
-        if (cat.HasValue) query = query.Where(p => p.CategoryId == cat);
-        if (status == "active") query = query.Where(p => p.IsActive);
-        else if (status == "inactive") query = query.Where(p => !p.IsActive);
-        else if (status == "featured") query = query.Where(p => p.IsFeatured);
+        var query = Filter(db.Products.AsNoTracking().Include(p => p.Category).Include(p => p.Material), q, cat, status);
 
         const int size = 20;
         var total = await query.CountAsync();
@@ -69,6 +60,72 @@ public class ProductsController(AppDbContext db, FileStorageService files, Audit
         ViewBag.Pages = (int)Math.Ceiling(total / (double)size);
         ViewBag.Total = total;
         return View(items);
+    }
+
+    /// <summary>فیلترهای صفحه لیست؛ در عملیات گروهی «همه نتایج فیلتر» هم همین استفاده می‌شود</summary>
+    private static IQueryable<Product> Filter(IQueryable<Product> query, string? q, int? cat, string? status)
+    {
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var t = Fmt.EnDigits(q.Trim());
+            query = query.Where(p => p.NameFa.Contains(t) || (p.NameEn != null && p.NameEn.Contains(t)) || p.Code.Contains(t));
+        }
+        if (cat.HasValue) query = query.Where(p => p.CategoryId == cat);
+        if (status == "active") query = query.Where(p => p.IsActive);
+        else if (status == "inactive") query = query.Where(p => !p.IsActive);
+        else if (status == "featured") query = query.Where(p => p.IsFeatured);
+        return query;
+    }
+
+    /// <summary>
+    /// عملیات گروهی روی محصولات تیک‌خورده یا همه نتایج فیلتر فعلی: حذف، فعال، غیرفعال، انتقال به دسته دیگر.
+    /// برای «همه نتایج» تعداد مورد انتظار (expected) هم فرستاده می‌شود تا اگر در این فاصله نتایج عوض شده بود، کاری انجام نشود.
+    /// </summary>
+    [HttpPost, HasPermission(Permissions.CatalogManage)]
+    public async Task<IActionResult> Bulk(string op, List<int>? ids, bool all, int? expected, string? q, int? cat, string? status, int? targetCategoryId)
+    {
+        IActionResult Back() => RedirectToAction(nameof(Index), new { q, cat, status });
+        ids ??= new();
+        var scope = all ? Filter(db.Products, q, cat, status) : db.Products.Where(p => ids.Contains(p.Id));
+        if (!all && ids.Count == 0) { Error("هیچ محصولی انتخاب نشده است."); return Back(); }
+        var count = await scope.CountAsync();
+        if (count == 0) { Error("محصولی برای این عملیات پیدا نشد."); return Back(); }
+        if (all && expected != count)
+        {
+            Error($"تعداد نتایج فیلتر عوض شده است ({Fmt.Number(count)} محصول). دوباره بررسی و انتخاب کنید.");
+            return Back();
+        }
+        var filterNote = all ? $"همه نتایج فیلتر (جستجو: {q ?? "-"}، دسته: {cat?.ToString() ?? "همه"}، وضعیت: {status ?? "همه"})" : "انتخاب دستی";
+        switch (op)
+        {
+            case "delete":
+                var r = await bulk.DeleteAsync(scope);
+                audit.Log("حذف گروهی محصولات", "Product", null,
+                    $"{r.Products} محصول، {r.Variants} سایز، {r.Images} عکس، {r.Documents} مستند — {filterNote}" + (all ? "" : $" — شناسه‌ها: {string.Join(",", ids)}"));
+                await db.SaveChangesAsync();
+                Success($"{Fmt.Number(r.Products)} محصول با {Fmt.Number(r.Variants)} سایز حذف شد. فاکتورها و سفارش‌های قبلی دست‌نخورده باقی می‌مانند.");
+                break;
+            case "activate":
+            case "deactivate":
+                var active = op == "activate";
+                var n = await bulk.SetActiveAsync(scope, active);
+                audit.Log(active ? "فعال‌سازی گروهی محصولات" : "غیرفعال‌سازی گروهی محصولات", "Product", null, $"{n} محصول — {filterNote}");
+                await db.SaveChangesAsync();
+                Success($"{Fmt.Number(n)} محصول {(active ? "فعال" : "غیرفعال")} شد.");
+                break;
+            case "move":
+                var target = targetCategoryId is null ? null : await db.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == targetCategoryId);
+                if (target is null) { Error("دسته‌بندی مقصد را انتخاب کنید."); return Back(); }
+                var m = await bulk.MoveAsync(scope, target.Id);
+                audit.Log("انتقال گروهی محصولات", "Category", target.Id, $"{m} محصول به «{target.NameFa}» — {filterNote}");
+                await db.SaveChangesAsync();
+                Success($"{Fmt.Number(m)} محصول به دسته «{target.NameFa}» منتقل شد.");
+                break;
+            default:
+                Error("عملیات نامعتبر است.");
+                break;
+        }
+        return Back();
     }
 
     public class ProductRow
@@ -203,9 +260,11 @@ public class ProductsController(AppDbContext db, FileStorageService files, Audit
         if (product is null) return NotFound();
         var errors = new List<string>();
         var order = product.Images.Count == 0 ? 0 : product.Images.Max(i => i.SortOrder) + 1;
+        // همه عکس‌های محصول با نسبت ابعاد و حالت انتخاب‌شده در «ظاهر سایت» هم‌اندازه می‌شوند
+        var profile = ImageProfile.Product(await settings.GetAsync());
         foreach (var f in images.Take(20))
         {
-            var (path, err) = await files.SaveAsync(f, "products", UploadKind.Image);
+            var (path, err) = await files.SaveAsync(f, "products", UploadKind.Image, profile);
             if (err is not null) { errors.Add($"{f.FileName}: {err}"); continue; }
             product.Images.Add(new ProductImage
             {

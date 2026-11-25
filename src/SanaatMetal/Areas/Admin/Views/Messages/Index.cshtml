@@ -19,13 +19,13 @@
         @foreach (var m in Model)
         {
             <a asp-action="Details" asp-route-id="@m.Id" class="list-group-item list-group-item-action bg-transparent d-flex gap-3 align-items-center py-3">
-                <span class="a-avatar">@(m.Name.Length > 0 ? m.Name[..1] : "?")</span>
+                <span class="a-avatar d-none d-sm-grid">@(m.Name.Length > 0 ? m.Name[..1] : "?")</span>
                 <div class="flex-grow-1 min-w-0">
                     <div class="d-flex justify-content-between gap-2">
-                        <span class="@(m.IsRead ? "" : "fw-black text-primary")">@m.Name <span class="small text-muted ltr d-inline-block">&lt;@m.Email&gt;</span></span>
+                        <span class="min-w-0 text-truncate @(m.IsRead ? "" : "fw-black text-primary")">@m.Name <span class="small text-muted ltr">&lt;@m.Email&gt;</span></span>
                         <small class="text-muted text-nowrap">@D(m.CreatedAt, true)</small>
                     </div>
-                    <div class="small fw-bold">@m.Subject</div>
+                    <div class="small fw-bold text-truncate">@m.Subject</div>
                     <div class="small text-muted text-truncate">@m.Body</div>
                 </div>
                 @if (m.EmailSent) { <span class="pill pill-green" title="ایمیل شد"><i class="bi bi-envelope-check"></i></span> } else { <span class="pill pill-orange" title="ایمیل نشد — فقط در دیتابیس"><i class="bi bi-database"></i></span> }
@@ -33,5 +33,5 @@
         }
     </div>
     @if (Model.Count == 0) { <div class="a-empty"><i class="bi bi-inbox"></i>پیامی وجود ندارد.</div> }
-    @if (pages > 1) { <nav class="p-3"><ul class="pagination justify-content-center mb-0">@for (var i = 1; i <= pages; i++) { <li class="page-item @(i == page ? "active" : "")"><a class="page-link" asp-route-page="@i" asp-route-q="@ViewBag.Q" asp-route-filter="@filter">@N(i)</a></li> }</ul></nav> }
+    @if (pages > 1) { <div class="p-3"><partial name="_Pager" model="(page, pages)" /></div> }
 </div>
