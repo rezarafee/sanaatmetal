@@ -96,6 +96,30 @@ public class FileStorageService(IWebHostEnvironment env, ILogger<FileStorageServ
             await s.CopyToAsync(ms);
             bytes = ms.ToArray();
         }
+        return await SaveValidatedAsync(bytes, ext, folder, kind, profile);
+    }
+
+    /// <summary>
+    /// ذخیره عکسی که از جایی غیر از فرم آمده (مثلاً از داخل فایل ZIP). نام فایل فقط برای پسوند استفاده می‌شود.
+    /// همان بررسی پسوند، امضای فایل و پردازش عکس <see cref="SaveAsync"/> انجام می‌شود.
+    /// </summary>
+    public Task<(string? Path, string? Error)> SaveImageBytesAsync(byte[] bytes, string fileName, string folder, ImageProfile? profile)
+    {
+        var ext = System.IO.Path.GetExtension(fileName).ToLowerInvariant();
+        if (!ImageExt.Contains(ext)) return Task.FromResult<(string?, string?)>((null, $"نوع فایل مجاز نیست. پسوندهای مجاز: {string.Join("، ", ImageExt)}"));
+        if (bytes.Length == 0) return Task.FromResult<(string?, string?)>((null, "فایل خالی است."));
+        return SaveValidatedAsync(bytes, ext, folder, UploadKind.Image, profile);
+    }
+
+    /// <summary>آیا ابتدای فایل با امضای پسوندش (jpg/png/webp/...) می‌خواند؟</summary>
+    public static bool HasValidSignature(byte[] bytes, string fileName) =>
+        Signatures.TryGetValue(System.IO.Path.GetExtension(fileName).ToLowerInvariant(), out var sigs) &&
+        sigs.Any(sig => bytes.Length >= sig.Length && bytes.AsSpan(0, sig.Length).SequenceEqual(sig));
+
+    public static bool IsImageExtension(string fileName) => ImageExt.Contains(System.IO.Path.GetExtension(fileName).ToLowerInvariant());
+
+    private async Task<(string? Path, string? Error)> SaveValidatedAsync(byte[] bytes, string ext, string folder, UploadKind kind, ImageProfile? profile)
+    {
         if (!Signatures[ext].Any(sig => bytes.Length >= sig.Length && bytes.AsSpan(0, sig.Length).SequenceEqual(sig)))
             return (null, "محتوای فایل با پسوند آن مطابقت ندارد.");
 

@@ -45,6 +45,7 @@
                 @if (Can(Permissions.CatalogManage))
                 {
                     <a class="a-link @Act("ProductImport")" asp-area="Admin" asp-controller="ProductImport" asp-action="Index"><i class="bi bi-file-earmark-spreadsheet"></i><span>ورود گروهی از اکسل</span></a>
+                    <a class="a-link @Act("ProductImageImport")" asp-area="Admin" asp-controller="ProductImageImport" asp-action="Index"><i class="bi bi-images"></i><span>بارگذاری گروهی عکس</span></a>
                     <a class="a-link @Act("Categories")" asp-area="Admin" asp-controller="Categories" asp-action="Index"><i class="bi bi-diagram-3"></i><span>دسته‌بندی‌ها</span></a>
                     <a class="a-link @Act("Materials")" asp-area="Admin" asp-controller="Materials" asp-action="Index"><i class="bi bi-layers"></i><span>متریال‌ها</span></a>
                     <a class="a-link @Act("Documents")" asp-area="Admin" asp-controller="Documents" asp-action="Index"><i class="bi bi-file-earmark-check"></i><span>گواهی‌ها و دیتاشیت‌ها</span></a>

@@ -562,4 +562,12 @@
     const check = () => { if (btn) btn.disabled = norm(inp.value) !== norm(inp.dataset.matchConfirm); };
     inp.addEventListener('input', check); check();
   });
+
+  /* ---------- Long uploads (ZIP عکس‌ها): نمایش «در حال پردازش» و جلوگیری از ارسال دوباره ---------- */
+  document.addEventListener('submit', e => {
+    const f = e.target;
+    if (e.defaultPrevented || !f.matches('form[data-busy]')) return;
+    $$('button[type=submit], button:not([type])', f).forEach(b => { b.disabled = true; });
+    $$('[data-busy-show]', f).forEach(x => x.classList.remove('d-none'));
+  });
 })();

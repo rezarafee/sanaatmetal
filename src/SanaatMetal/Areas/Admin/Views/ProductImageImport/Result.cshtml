@@ -1,0 +1,93 @@
+@model ImageImportResult
+@{
+    ViewData["Title"] = Model.DryRun ? "بررسی عکس‌های ZIP" : "نتیجه بارگذاری عکس‌ها";
+    const int maxRows = 500;
+    var dry = Model.DryRun;
+}
+<div class="a-card mb-4">
+    <div class="a-card-head">
+        <h5><i class="bi bi-images ic text-primary"></i>@(dry ? "بررسی (چیزی ذخیره نشد)" : "نتیجه"): <span class="ltr">@Model.FileName</span></h5>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-soft btn-sm" asp-action="Index"><i class="bi bi-arrow-right ic"></i>@(dry ? "بارگذاری اصلی" : "ZIP دیگر")</a>
+            <a class="btn btn-soft btn-sm" asp-controller="Products" asp-action="Index"><i class="bi bi-box-seam ic"></i>محصولات</a>
+        </div>
+    </div>
+    <div class="a-card-body">
+        <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-xl-6">
+            <div class="col"><div class="a-stat g-slate"><small>عکس‌های ZIP</small><div class="v">@N(Model.ImageFiles)</div></div></div>
+            <div class="col"><div class="a-stat g-green"><small>@(dry ? "قابل ثبت" : "عکس ثبت‌شده")</small><div class="v">@N(dry ? Model.Matched : Model.Added)</div></div></div>
+            <div class="col"><div class="a-stat g-purple"><small>محصول</small><div class="v">@N(Model.Products.Count)</div></div></div>
+            <div class="col"><div class="a-stat @(Model.Unmatched.Count > 0 ? "g-orange" : "g-slate")"><small>محصول پیدا نشد</small><div class="v">@N(Model.Unmatched.Count)</div></div></div>
+            <div class="col"><div class="a-stat @(Model.Invalid.Count + Model.Failed > 0 ? "g-red" : "g-slate")"><small>نامعتبر / خطا</small><div class="v">@N(Model.Invalid.Count + Model.Failed)</div></div></div>
+            <div class="col"><a class="a-stat g-slate d-block" asp-action="Missing"><small>محصول فعال بدون عکس</small><div class="v">@N(Model.ProductsWithoutImages)</div></a></div>
+        </div>
+        @foreach (var w in Model.Warnings) { <div class="alert alert-warning mt-3 mb-0"><i class="bi bi-exclamation-triangle ic"></i>@w</div> }
+        @if (Model.Mode == ImageImportMode.Replace && Model.Removed > 0)
+        {
+            <div class="alert alert-secondary mt-3 mb-0"><i class="bi bi-arrow-repeat ic"></i>@N(Model.Removed) عکس قبلی @(dry ? "حذف و جایگزین می‌شود" : "حذف و جایگزین شد").</div>
+        }
+        @if (dry && Model.Matched > 0)
+        {
+            <div class="alert alert-info mt-3 mb-0"><i class="bi bi-info-circle ic"></i>اگر گزارش درست است، همان فایل را بدون تیک «فقط بررسی» دوباره بارگذاری کنید.</div>
+        }
+    </div>
+</div>
+
+@if (Model.Unmatched.Count + Model.Invalid.Count + Model.Failed > 0)
+{
+    <div class="a-card mb-4">
+        <div class="a-card-head"><h5><i class="bi bi-exclamation-octagon ic text-danger"></i>فایل‌هایی که ثبت @(dry ? "نمی‌شوند" : "نشدند")</h5></div>
+        <div class="table-responsive">
+            <table class="table a-table table-sm mb-0">
+                <thead><tr><th>فایل</th><th>دلیل</th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model.Products) foreach (var f in p.Files.Where(f => f.Error is not null))
+                    {
+                        <tr><td class="ltr text-start text-break">@f.Name</td><td class="text-danger">@f.Error</td></tr>
+                    }
+                    @foreach (var s in Model.Unmatched.Take(maxRows))
+                    {
+                        <tr><td class="ltr text-start text-break">@s.Name</td><td><span class="pill pill-orange">@s.Reason</span></td></tr>
+                    }
+                    @foreach (var s in Model.Invalid.Take(maxRows))
+                    {
+                        <tr><td class="ltr text-start text-break">@s.Name</td><td><span class="pill pill-red">@s.Reason</span></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model.Products.Count > 0)
+{
+    <div class="a-card">
+        <div class="a-card-head"><h5><i class="bi bi-box-seam ic text-primary"></i>محصولات (@N(Model.Products.Count))</h5></div>
+        <div class="table-responsive">
+            <table class="table a-table table-sm table-hover mb-0">
+                <thead><tr><th>کد کالا</th><th>نام</th><th>عکس‌ها</th><th>@(dry ? "قابل ثبت" : "ثبت شد")</th><th>عکس قبلی</th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model.Products.OrderByDescending(p => p.HasError).Take(maxRows))
+                    {
+                        <tr>
+                            <td class="ltr text-start text-nowrap">
+                                @if (dry) { @p.Code } else { <a asp-controller="Products" asp-action="Edit" asp-route-id="@p.ProductId" asp-fragment="images">@p.Code</a> }
+                            </td>
+                            <td>@p.Name</td>
+                            <td class="small">
+                                @foreach (var f in p.Files)
+                                {
+                                    <span class="ltr d-inline-block me-2 @(f.Error is not null ? "text-danger text-decoration-line-through" : "")">@f.Name</span>
+                                    @if (f.IsMain) { <span class="pill pill-blue">اصلی</span> }
+                                }
+                            </td>
+                            <td>@N(dry ? p.Files.Count(f => f.Error is null) : p.Added)</td>
+                            <td class="text-muted">@N(p.ExistingImages)@(p.Removed > 0 ? " (حذف)" : "")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (Model.Products.Count > maxRows) { <div class="p-3 small text-muted">@N(Model.Products.Count - maxRows) محصول دیگر نمایش داده نشد.</div> }
+        </div>
+    </div>
+}

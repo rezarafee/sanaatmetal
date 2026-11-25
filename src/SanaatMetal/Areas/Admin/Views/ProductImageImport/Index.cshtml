@@ -1,0 +1,67 @@
+@{
+    ViewData["Title"] = "بارگذاری گروهی عکس محصولات";
+    var maxMb = ProductImageImportService.MaxZipBytes / 1024 / 1024;
+}
+<div class="row g-4">
+    <div class="col-12 col-lg-5">
+        <div class="a-card h-100">
+            <div class="a-card-head"><h5><i class="bi bi-file-earmark-zip ic text-primary"></i>بارگذاری فایل ZIP عکس‌ها</h5></div>
+            <div class="a-card-body">
+                <form method="post" asp-action="Upload" enctype="multipart/form-data" data-busy>
+                    <label class="form-label" for="zipFile">فایل ZIP (حداکثر @N((int)maxMb) مگابایت و @N(ProductImageImportService.MaxImages) عکس)</label>
+                    <input class="form-control" type="file" id="zipFile" name="file" accept=".zip,application/zip" required />
+
+                    <div class="mt-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="mode" id="modeAppend" value="Append" checked />
+                            <label class="form-check-label" for="modeAppend"><b>افزودن</b> به عکس‌های فعلی محصول</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="mode" id="modeReplace" value="Replace" />
+                            <label class="form-check-label" for="modeReplace"><b>جایگزینی</b>: عکس‌های قبلی همان محصولات حذف شود</label>
+                        </div>
+                        <div class="form-text">در هر دو حالت فقط محصولاتی که در ZIP عکس دارند تغییر می‌کنند.</div>
+                    </div>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" name="dryRun" id="dryRun" value="true" />
+                        <label class="form-check-label" for="dryRun">فقط بررسی کن (چیزی ذخیره نشود)</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-a mt-3 w-100"><i class="bi bi-cloud-arrow-up ic"></i>بارگذاری عکس‌ها</button>
+                    <div class="alert alert-info small mt-3 mb-0 d-none" data-busy-show>
+                        <span class="spinner-border spinner-border-sm ms-1"></span>
+                        در حال بارگذاری و بهینه‌سازی عکس‌ها... برای ZIPهای بزرگ ممکن است چند دقیقه طول بکشد؛ صفحه را نبندید.
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-7">
+        <div class="a-card h-100">
+            <div class="a-card-head"><h5><i class="bi bi-info-circle ic text-success"></i>نام‌گذاری عکس‌ها</h5></div>
+            <div class="a-card-body">
+                <p>نام هر عکس باید <b>کد کالا</b> باشد (همان ستون «کد کالا» در اکسل). سیستم خودش هر عکس را به محصولش وصل می‌کند:</p>
+                <div class="table-responsive">
+                    <table class="table a-table table-sm mb-3">
+                        <thead><tr><th>نام فایل</th><th>نتیجه</th></tr></thead>
+                        <tbody>
+                            <tr><td class="ltr text-start">FL-150.jpg</td><td>عکس اصلی محصول <span class="ltr d-inline-block">FL-150</span></td></tr>
+                            <tr><td class="ltr text-start">FL-150-2.jpg</td><td>عکس دوم گالری</td></tr>
+                            <tr><td class="ltr text-start">FL-150-3.png</td><td>عکس سوم گالری</td></tr>
+                            <tr><td class="ltr text-start">FL-150_2.jpg · FL-150 (2).jpg</td><td>این شکل‌ها هم عکس دوم حساب می‌شوند</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <ul class="small mb-3">
+                    <li>بزرگ و کوچک بودن حروف مهم نیست. کد سایز (SKU) هم قبول است و عکس به محصول همان سایز اضافه می‌شود.</li>
+                    <li>اگر در کد کالا <span class="ltr">/</span> هست (مثلاً <span class="ltr">FL/150</span>)، در نام فایل به‌جایش <span class="ltr">-</span> بگذارید: <span class="ltr">FL-150.jpg</span></li>
+                    <li>فرمت‌های مجاز: jpg، png و webp؛ هر عکس حداکثر @N((int)(ProductImageImportService.MaxEntryBytes / 1024 / 1024)) مگابایت. پوشه‌بندی داخل ZIP مهم نیست.</li>
+                    <li>عکس‌ها در سرور با اندازه و نسبت تنظیم‌شده در «ظاهر سایت» کوچک و فشرده می‌شوند.</li>
+                    <li>در حالت «افزودن»، عکس بدون شماره عکس اصلی جدید می‌شود؛ اگر فقط عکس‌های شماره‌دار باشد، عکس اصلی فعلی می‌ماند.</li>
+                    <li>بعد از بارگذاری گزارشی از عکس‌های ثبت‌شده، عکس‌هایی که محصولشان پیدا نشد و فایل‌های نامعتبر نمایش داده می‌شود.</li>
+                </ul>
+                <a class="btn btn-soft btn-sm" asp-action="Missing"><i class="bi bi-filetype-csv ic"></i>فهرست محصولات بدون عکس (با نام فایل پیشنهادی)</a>
+            </div>
+        </div>
+    </div>
+</div>

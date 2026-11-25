@@ -148,6 +148,9 @@ The host is **shared Windows/Plesk** and the app pool **cannot create folders or
 - Uploads: extension + size + magic-bytes checked, random names, **SVG and executables rejected** (`FileStorageService`). Images are resized client-side (`data-img` inputs)
   and then **server-side**: pass an `ImageProfile` to `FileStorageService.SaveAsync` (`ImageService`, SkiaSharp: EXIF orientation, resize/crop/pad, WebP/JPEG/PNG, >50 MP rejected).
   Product images use `ImageProfile.Product(settings)` (ratio + fit from Appearance); logos, favicon, OG, hero and background have their own profiles.
+  Bytes that do not come from a form (e.g. ZIP entries) go through `FileStorageService.SaveImageBytesAsync` (same checks).
+- Bulk image ZIP (`ProductImageImportService`, admin › بارگذاری گروهی عکس): entries are read into memory only (never extracted, so no zip-slip),
+  file name = product code (or variant SKU), `-2`/`_2`/` (2)` = gallery order; limits 95 MB ZIP, 1000 images, 20 MB per image (actual bytes capped, not the declared size).
 - Prices and invoice totals are **always computed on the server** (`InvoiceService.Recalculate`, `PricingService`); never trust posted totals.
 - Invoices are soft-deleted (`IsDeleted`), excluded from reports, restorable from Trash.
 - Secrets never in git: `appsettings.Production.json` is git-ignored; don't put real passwords in `appsettings.json` or docs.
