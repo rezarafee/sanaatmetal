@@ -1,7 +1,7 @@
 @model List<ProductDocument>
 @{
     ViewData["Title"] = L["Downloads"];
-    ViewData["Description"] = L.IsFa ? "دانلود گواهی‌نامه‌ها، دیتاشیت‌ها و کاتالوگ محصولات صنعتی (لوله، فلنج، شیرآلات و اتصالات)." : "Download certificates, datasheets and catalogs for our industrial products (pipes, flanges, valves and fittings).";
+    ViewData["Description"] = L["DownloadsMetaDesc"];
     if (!string.IsNullOrEmpty(ViewBag.Q as string) || ViewBag.Type != null) ViewData["Robots"] = "noindex, follow";
     DocumentType? type = ViewBag.Type;
 }

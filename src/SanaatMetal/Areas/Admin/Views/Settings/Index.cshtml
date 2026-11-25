@@ -56,11 +56,11 @@
                     <div class="form-text">با جابه‌جا کردن، اندازه همین صفحه تغییر می‌کند؛ برای ماندگاری «ذخیره» را بزنید.</div>
                 </div>
             </div>
-            <div class="a-card a-card-body mb-4">
-                <label class="form-label">لوگو</label>
-                <img class="w-100 rounded-4 border p-2 mb-2" style="aspect-ratio:3/1;object-fit:contain" src="@(Model.LogoPath ?? "/favicon.svg")" data-preview-for="logo" alt="" />
-                <input type="file" class="form-control mb-2" name="logo" id="logo" accept=".jpg,.jpeg,.png,.webp" data-img />
-                @if (Model.LogoPath != null) { <div class="form-check"><input class="form-check-input" type="checkbox" name="removeLogo" value="true" id="rl" /><label class="form-check-label small" for="rl">حذف لوگو</label></div> }
+            <div class="a-card a-card-body mb-4 d-flex flex-column gap-2">
+                <div class="fw-bold"><i class="bi bi-palette ic text-primary"></i>ظاهر و متن‌های سایت</div>
+                <p class="small text-muted mb-1">لوگو، رنگ‌ها، پس‌زمینه، منو، اندازه عکس‌ها، انیمیشن‌ها و همه متن‌های سایت در صفحه‌های جداگانه تنظیم می‌شوند.</p>
+                <a class="btn btn-soft-primary" asp-action="Appearance"><i class="bi bi-palette ic"></i>ظاهر سایت</a>
+                <a class="btn btn-soft" asp-action="Texts"><i class="bi bi-fonts ic"></i>متن‌های سایت</a>
             </div>
             <div class="a-card mb-4">
                 <div class="a-card-head"><h5><i class="bi bi-receipt ic text-warning"></i>فاکتور</h5></div>

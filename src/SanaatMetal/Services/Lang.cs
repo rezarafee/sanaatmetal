@@ -3,7 +3,7 @@ using System.Globalization;
 namespace SanaatMetal.Services;
 
 /// <summary>زبان صفحات عمومی (فارسی / انگلیسی). پنل ادمین همیشه فارسی است.</summary>
-public class Lang
+public class Lang(SettingsService settings)
 {
     public static readonly string[] Supported = ["fa", "en"];
 
@@ -13,8 +13,37 @@ public class Lang
     public string Dir => IsFa ? "rtl" : "ltr";
     public string Other => IsFa ? "en" : "fa";
 
-    public string this[string key] =>
-        Texts.TryGetValue(key, out var t) ? (IsFa ? t.Fa : t.En) : key;
+    private IReadOnlyDictionary<string, (string? Fa, string? En)>? _overrides;
+    private IReadOnlyDictionary<string, (string? Fa, string? En)> Overrides => _overrides ??= settings.Get().Texts();
+
+    /// <summary>متن رابط کاربری؛ اگر مدیر در «متن‌های سایت» متن دیگری گذاشته باشد همان برگردانده می‌شود</summary>
+    public string this[string key]
+    {
+        get
+        {
+            if (Overrides.TryGetValue(key, out var o))
+            {
+                var v = IsFa ? o.Fa : o.En;
+                if (!string.IsNullOrWhiteSpace(v)) return v!;
+            }
+            return Texts.TryGetValue(key, out var t) ? (IsFa ? t.Fa : t.En) : key;
+        }
+    }
+
+    /// <summary>متن پیش‌فرض فارسی/انگلیسی همه کلیدها (برای صفحه «متن‌های سایت» در پنل)</summary>
+    public static IReadOnlyDictionary<string, (string Fa, string En)> Defaults => Texts;
+
+    /// <summary>کلیدهایی که در صفحه «متن‌های سایت» قابل ویرایش هستند، به ترتیب و با گروه</summary>
+    public static readonly (string Group, string[] Keys)[] EditableGroups =
+    [
+        ("منو و عمومی", ["Home", "Products", "AllProducts", "Categories", "Downloads", "About", "Contact", "Cart", "SearchPlaceholder", "QuickLinks", "Rights"]),
+        ("بنر و صفحه اصلی", ["HeroPopular", "HeroQ1", "HeroQ2", "HeroQ3", "ViewProducts", "RequestQuote", "FeaturedProducts", "OurClients", "OurClientsSub",
+            "StatProducts", "StatClients", "StatCerts", "StatYears"]),
+        ("چرا ما؟", ["WhyUs", "Why1", "Why1d", "Why2", "Why2d", "Why3", "Why3d", "Why4", "Why4d"]),
+        ("محصول و مشخصات", ["Size", "Class", "Schedule", "Unit", "Material", "Standard", "Brand", "Origin", "Code", "Specifications", "SelectSize",
+            "AllMaterials", "CallForPrice", "AddToCart", "Certificates", "Datasheets", "Documents", "NoDocuments", "RelatedProducts", "ProductsMetaDesc", "DownloadsMetaDesc"]),
+        ("سبد خرید و تماس", ["CartNote", "CheckoutHint", "OrderSuccessText2", "ContactTitle", "ContactSub", "ContactThanks", "Office1", "Office2"]),
+    ];
 
     /// <summary>انتخاب محتوای دو زبانه؛ اگر انگلیسی خالی بود فارسی برمی‌گردد</summary>
     public string Pick(string? fa, string? en) => IsEn && !string.IsNullOrWhiteSpace(en) ? en! : fa ?? en ?? "";
@@ -29,7 +58,7 @@ public class Lang
         ["Products"] = ("محصولات", "Products"),
         ["AllProducts"] = ("همه محصولات", "All products"),
         ["Categories"] = ("دسته‌بندی‌ها", "Categories"),
-        ["Downloads"] = ("گواهی‌ها و دیتاشیت‌ها", "Certificates & datasheets"),
+        ["Downloads"] = ("کاتالوگ و مستندات", "Catalogs & documents"),
         ["About"] = ("درباره ما", "About us"),
         ["Contact"] = ("تماس با ما", "Contact us"),
         ["Cart"] = ("سبد خرید", "Cart"),
@@ -37,23 +66,23 @@ public class Lang
         ["SearchPlaceholder"] = ("جستجوی محصول، سایز یا کد...", "Search product, size or code..."),
         ["CallShort"] = ("تماس", "Call"),
         ["HeroPopular"] = ("پرجستجو:", "Popular:"),
-        ["HeroQ1"] = ("فلنج", "Flange"),
-        ["HeroQ2"] = ("شیر توپی", "Ball valve"),
-        ["HeroQ3"] = ("لوله", "Pipe"),
+        ["HeroQ1"] = ("", ""),
+        ["HeroQ2"] = ("", ""),
+        ["HeroQ3"] = ("", ""),
         ["ViewProducts"] = ("مشاهده محصولات", "Browse products"),
         ["RequestQuote"] = ("درخواست استعلام", "Request a quote"),
         ["FeaturedProducts"] = ("محصولات ویژه", "Featured products"),
         ["OurClients"] = ("مشتریان ما", "Our clients"),
-        ["OurClientsSub"] = ("افتخار همکاری با پالایشگاه‌ها و صنایع بزرگ کشور", "Trusted by refineries and major industries"),
+        ["OurClientsSub"] = ("افتخار همکاری با مجموعه‌های معتبر کشور", "Trusted by leading businesses"),
         ["WhyUs"] = ("چرا ما؟", "Why choose us?"),
-        ["Why1"] = ("کالای استاندارد و دارای گواهی", "Certified, standard products"),
-        ["Why1d"] = ("همه محصولات با گواهی‌نامه‌های معتبر و دیتاشیت به‌روز عرضه می‌شوند.", "Every product ships with valid certificates and up-to-date datasheets."),
-        ["Why2"] = ("تنوع سایز و متریال", "Wide range of sizes & materials"),
-        ["Why2d"] = ("از کربن استیل تا استنلس و آلیاژی، در کلاس‌ها و اسکجول‌های مختلف.", "From carbon steel to stainless and alloys, in many classes and schedules."),
-        ["Why3"] = ("تحویل سریع پروژه‌ای", "Fast project delivery"),
-        ["Why3d"] = ("تأمین سریع اقلام پروژه‌های نفت، گاز و پتروشیمی.", "Rapid supply for oil, gas and petrochemical projects."),
-        ["Why4"] = ("مشاوره فنی", "Technical consulting"),
-        ["Why4d"] = ("کارشناسان ما در انتخاب کالای مناسب کنار شما هستند.", "Our engineers help you pick the right item."),
+        ["Why1"] = ("کالای اصل و استاندارد", "Genuine, standard products"),
+        ["Why1d"] = ("همه محصولات اصل، با ضمانت و مستندات معتبر عرضه می‌شوند.", "Every product is genuine and comes with warranty and documentation."),
+        ["Why2"] = ("تنوع بالای محصولات", "Wide product range"),
+        ["Why2d"] = ("مدل‌ها، برندها و سایزهای مختلف را یک‌جا پیدا کنید.", "Find many models, brands and sizes in one place."),
+        ["Why3"] = ("ارسال سریع", "Fast delivery"),
+        ["Why3d"] = ("تأمین و ارسال سریع سفارش‌ها به سراسر کشور.", "Quick supply and nationwide shipping."),
+        ["Why4"] = ("مشاوره تخصصی", "Expert advice"),
+        ["Why4d"] = ("کارشناسان ما در انتخاب کالای مناسب کنار شما هستند.", "Our experts help you pick the right item."),
         ["CallForPrice"] = ("تماس بگیرید", "Call for price"),
         ["Price"] = ("قیمت", "Price"),
         ["AddToCart"] = ("افزودن به سبد", "Add to cart"),
@@ -135,7 +164,7 @@ public class Lang
         ["Prev"] = ("قبلی", "Previous"),
         ["Next"] = ("بعدی", "Next"),
         ["StatProducts"] = ("محصول", "Products"),
-        ["StatClients"] = ("مشتری صنعتی", "Industrial clients"),
+        ["StatClients"] = ("مشتری", "Clients"),
         ["StatCerts"] = ("گواهی و دیتاشیت", "Certificates"),
         ["StatYears"] = ("سال تجربه", "Years of experience"),
         ["NotFound"] = ("صفحه مورد نظر پیدا نشد.", "Page not found."),
@@ -150,5 +179,7 @@ public class Lang
         ["Close"] = ("بستن", "Close"),
         ["ViewCart"] = ("مشاهده سبد خرید", "View cart"),
         ["SelectSize"] = ("انتخاب سایز", "Select size"),
+        ["ProductsMetaDesc"] = ("لیست محصولات با مشخصات، قیمت و مستندات.", "Product list with specifications, prices and documents."),
+        ["DownloadsMetaDesc"] = ("دانلود کاتالوگ‌ها، گواهی‌نامه‌ها و دیتاشیت‌های محصولات.", "Download product catalogs, certificates and datasheets."),
     };
 }

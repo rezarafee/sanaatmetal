@@ -3,7 +3,7 @@
     var title = Model.CurrentCategory is null ? L["Products"] : L.Pick(Model.CurrentCategory.NameFa, Model.CurrentCategory.NameEn);
     ViewData["Title"] = Model.Page > 1 ? $"{title} - {L["Page"]} {L.Num(Model.Page)}" : title;
     ViewData["Description"] = Model.CurrentCategory is null
-        ? (L.IsFa ? "لیست محصولات صنعتی: لوله، فلنج، شیرآلات و اتصالات با سایزها، متریال‌ها و استانداردهای مختلف همراه با گواهی و دیتاشیت." : "Industrial products: pipes, flanges, valves and fittings in many sizes, materials and standards, with certificates and datasheets.")
+        ? L["ProductsMetaDesc"]
         : L.Pick(Model.CurrentCategory.DescriptionFa, Model.CurrentCategory.DescriptionEn) is { Length: > 0 } cd ? cd : title;
     {
         var cq = new List<string>();

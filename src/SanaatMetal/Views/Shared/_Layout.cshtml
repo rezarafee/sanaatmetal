@@ -14,7 +14,12 @@
     var canonical = Seo.WithLang(canonicalFa, L.Code);
     var metaTitle = string.IsNullOrEmpty(title) ? company : $"{title} | {company}";
     var metaDesc = Seo.Describe(ViewData["Description"] as string) ?? Seo.Describe(L.Pick(s.SloganFa, s.SloganEn)) ?? company;
-    var ogImage = Seo.Abs(Context, ViewData["OgImage"] as string ?? "/img/brand/og-image.png");
+    var ogImage = Seo.Abs(Context, ViewData["OgImage"] as string ?? s.OgImagePath ?? "/img/brand/og-image.png");
+    // ---------- ظاهر سایت (پنل: ظاهر سایت) ----------
+    var logo = string.IsNullOrEmpty(s.LogoPath) ? "/img/brand/logo-mark.svg" : s.LogoPath;
+    var footerLogo = s.FooterLogoPath ?? logo;
+    var logoClass = "logo-" + ThemeCss.Pick(s.LogoShape, ThemeCss.LogoShapes);
+    var brandEn = L.Pick(s.CompanyNameEn, s.CompanyNameFa);
     var robots = ViewData["Robots"] as string ?? "index, follow, max-image-preview:large";
     // لینک تغییر زبان: همان صفحه با ?lang= (قابل دنبال کردن برای موتور جستجو)
     var qb = new Microsoft.AspNetCore.Http.Extensions.QueryBuilder(Context.Request.Query.Where(q => q.Key != "lang").SelectMany(q => q.Value.Select(v => new KeyValuePair<string, string>(q.Key, v ?? ""))));
@@ -23,11 +28,11 @@
     string Active(string p) => (p == "/" ? path == "/" : path.StartsWith(p)) ? "active" : "";
     var texts = System.Text.Json.JsonSerializer.Serialize(new
     {
-        added = L["Added"], call = L["CallForPrice"], remove = L["Remove"], empty = L["CartEmpty"], @continue = L["ContinueShopping"],
+        added = L["Added"], call = L["CallForPrice"], remove = L["Remove"], empty = L["CartEmpty"], @continue = L["ContinueShopping"], close = L["Close"],
     });
 }
 <!DOCTYPE html>
-<html lang="@L.Code" dir="@L.Dir" data-bs-theme="light">
+<html lang="@L.Code" dir="@L.Dir" data-bs-theme="light" data-default-theme="@ThemeCss.Pick(s.ThemeMode, ThemeCss.Modes)">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -52,9 +57,18 @@
     <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/lib/swiper/swiper-bundle.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="~/apple-touch-icon.png" />
-    <meta name="theme-color" content="#22318a" />
+    <link rel="stylesheet" href="/theme.css?v=@ThemeCss.Version(s)" />
+    @if (!string.IsNullOrEmpty(s.FaviconPath))
+    {
+        <link rel="icon" href="@s.FaviconPath" type="image/png" />
+        <link rel="apple-touch-icon" href="@s.FaviconPath" />
+    }
+    else
+    {
+        <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="~/apple-touch-icon.png" />
+    }
+    <meta name="theme-color" content="@(ThemeCss.Hex(s.ThemePrimary) ?? "#22318a")" />
     <meta property="og:site_name" content="@company" />
     <meta property="og:type" content="@(ViewData["OgType"] as string ?? "website")" />
     <meta property="og:title" content="@(string.IsNullOrEmpty(title) ? company : title)" />
@@ -69,7 +83,7 @@
     <meta name="twitter:image" content="@ogImage" />
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body data-lang="@L.Code" data-currency="@L.Pick(s.CurrencyFa, s.CurrencyEn)">
+<body data-lang="@L.Code" data-currency="@L.Pick(s.CurrencyFa, s.CurrencyEn)" data-reveal="@ThemeCss.Pick(s.RevealAnimation, ThemeCss.Reveals)" data-hover="@ThemeCss.Pick(s.HoverEffect, ThemeCss.Hovers)" class="hero-decor-@ThemeCss.Pick(s.HeroDecor, ThemeCss.HeroDecors) @logoClass">
     <script type="application/json" id="sm-texts">@Html.Raw(texts)</script>
 
     <div class="sm-topbar py-2 d-none d-md-block">
@@ -95,20 +109,14 @@
     <nav class="navbar navbar-expand-lg sm-nav py-2">
         <div class="container">
             <a class="sm-brand" href="/">
-                <span class="sm-brand-logo">
-                    @if (!string.IsNullOrEmpty(s.LogoPath))
-                    {
-                        <img src="@s.LogoPath" alt="@company" />
-                    }
-                    else
-                    {
-                        <img src="~/img/brand/logo-mark.svg" alt="@company" width="44" height="44" />
-                    }
-                </span>
-                <span>
-                    @if (L.Code == "en") { <span class="sm-brand-name sm-wm d-block"><b>S</b>anaat<b>M</b>etal</span> } else { <span class="sm-brand-name d-block">@company</span> }
-                    <span class="sm-brand-sub d-none d-sm-block d-lg-none d-xxl-block">@L.Pick(s.SloganFa, s.SloganEn)</span>
-                </span>
+                <span class="sm-brand-logo"><img src="@logo" alt="@company" /></span>
+                @if (s.ShowBrandText)
+                {
+                    <span class="min-w-0">
+                        <span class="sm-brand-name d-block">@(L.IsEn ? brandEn : company)</span>
+                        <span class="sm-brand-sub d-none d-sm-block d-lg-none d-xxl-block">@L.Pick(s.SloganFa, s.SloganEn)</span>
+                    </span>
+                }
             </a>
 
             <div class="d-flex align-items-center gap-2 order-lg-last">
@@ -120,14 +128,14 @@
                     <i class="bi bi-bag"></i><span class="sm-cart-badge d-none">0</span>
                 </button>
                 <button class="navbar-toggler border-0 px-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainNav" aria-controls="mainNav" aria-label="menu">
-                    <span class="navbar-toggler-icon"></span>
+                    <i class="bi bi-list"></i>
                 </button>
             </div>
 
             <div class="offcanvas offcanvas-start sm-menu" tabindex="-1" id="mainNav" aria-labelledby="mainNavLabel">
                 <div class="offcanvas-header">
                     <span class="sm-brand" id="mainNavLabel">
-                        <span class="sm-brand-logo"><img src="@(string.IsNullOrEmpty(s.LogoPath) ? "/img/brand/logo-mark.svg" : s.LogoPath)" alt="" width="44" height="44" /></span>
+                        <span class="sm-brand-logo"><img src="@logo" alt="" /></span>
                         <span class="sm-brand-name">@company</span>
                     </span>
                     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -143,7 +151,7 @@
                             @await Component.InvokeAsync("NavCategories")
                         </ul>
                     </li>
-                    <li class="nav-item"><a class="nav-link @Active("/downloads")" href="/downloads">@L["Downloads"]</a></li>
+                    @if (s.ShowDownloads) { <li class="nav-item"><a class="nav-link @Active("/downloads")" href="/downloads">@L["Downloads"]</a></li> }
                     <li class="nav-item"><a class="nav-link @Active("/about")" href="/about">@L["About"]</a></li>
                     <li class="nav-item"><a class="nav-link @Active("/contact")" href="/contact">@L["Contact"]</a></li>
                 </ul>
@@ -167,8 +175,8 @@
             <div class="row g-4">
                 <div class="col-lg-4">
                     <a class="sm-brand mb-3" href="/">
-                        <span class="sm-brand-logo"><img src="~/img/brand/logo-mark.svg" alt="" width="44" height="44" /></span>
-                        @if (L.Code == "en") { <span class="sm-brand-name sm-wm text-white"><b>S</b>anaat<b>M</b>etal</span> } else { <span class="sm-brand-name text-white">@company</span> }
+                        <span class="sm-brand-logo"><img src="@footerLogo" alt="" /></span>
+                        @if (s.ShowBrandText) { <span class="sm-brand-name" style="color:var(--sm-footer-head)">@(L.IsEn ? brandEn : company)</span> }
                     </a>
                     <p class="mt-3" style="line-height:2">@L.Pick(s.SloganFa, s.SloganEn)</p>
                     <div class="social mt-3">
@@ -182,7 +190,7 @@
                     <h5>@L["QuickLinks"]</h5>
                     <ul>
                         <li><a href="/products">@L["Products"]</a></li>
-                        <li><a href="/downloads">@L["Downloads"]</a></li>
+                        @if (s.ShowDownloads) { <li><a href="/downloads">@L["Downloads"]</a></li> }
                         <li><a href="/about">@L["About"]</a></li>
                         <li><a href="/contact">@L["Contact"]</a></li>
                         <li><a href="/cart">@L["Cart"]</a></li>

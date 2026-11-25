@@ -1304,6 +1304,18 @@ namespace SanaatMetal.Data.Migrations
                     b.Property<int>("AdminFontSize")
                         .HasColumnType("int");
 
+                    b.Property<string>("BackgroundImagePath")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("BackgroundMode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("BackgroundVeil")
+                        .HasColumnType("int");
+
                     b.Property<string>("CompanyNameEn")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -1335,6 +1347,23 @@ namespace SanaatMetal.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("FaviconPath")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("FooterLogoPath")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("HeroDecor")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
+
+                    b.Property<string>("HeroImagePath")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
                     b.Property<string>("HeroSubtitleEn")
                         .HasMaxLength(600)
                         .HasColumnType("nvarchar(600)");
@@ -1351,6 +1380,11 @@ namespace SanaatMetal.Data.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<string>("HoverEffect")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
                     b.Property<string>("Instagram")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
@@ -1363,9 +1397,17 @@ namespace SanaatMetal.Data.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<int>("LogoHeight")
+                        .HasColumnType("int");
+
                     b.Property<string>("LogoPath")
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("LogoShape")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("Mobile")
                         .HasMaxLength(200)
@@ -1391,6 +1433,10 @@ namespace SanaatMetal.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("OgImagePath")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -1399,9 +1445,48 @@ namespace SanaatMetal.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("ProductImageFit")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("ProductImageRatio")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
                     b.Property<string>("RegistrationNumber")
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("RevealAnimation")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool>("ShowBrandText")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowCategories")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowClients")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowDownloads")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowFeatured")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowHeroSearch")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowStats")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowWhyUs")
+                        .HasColumnType("bit");
 
                     b.Property<string>("SloganEn")
                         .HasMaxLength(300)
@@ -1437,6 +1522,57 @@ namespace SanaatMetal.Data.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<string>("TextOverrides")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ThemeAccent")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
+                    b.Property<string>("ThemeBackground")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
+                    b.Property<string>("ThemeFooterBg")
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
+                    b.Property<string>("ThemeHeroBg")
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
+                    b.Property<string>("ThemeMode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("ThemeNavBg")
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
+                    b.Property<string>("ThemeNavText")
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
+                    b.Property<string>("ThemePrimary")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
+                    b.Property<int>("ThemeRadius")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ThemeTitleFont")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("ThemeTopbarBg")
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
                     b.Property<string>("WhatsApp")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
@@ -1448,6 +1584,9 @@ namespace SanaatMetal.Data.Migrations
                     b.Property<string>("WorkingHoursFa")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("YearsOfExperience")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
